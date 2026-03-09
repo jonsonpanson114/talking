@@ -3,6 +3,7 @@ import { UserProgress } from "@/lib/types";
 const STORAGE_KEY = "talking-user-progress";
 
 export function saveProgress(progress: UserProgress): void {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   } catch (error) {
@@ -11,6 +12,14 @@ export function saveProgress(progress: UserProgress): void {
 }
 
 export function loadProgress(): UserProgress {
+  const defaultProgress: UserProgress = {
+    answeredQuestions: {},
+    favorites: [],
+    lastViewed: {},
+  };
+
+  if (typeof window === "undefined") return defaultProgress;
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -19,11 +28,7 @@ export function loadProgress(): UserProgress {
   } catch (error) {
     console.error("Failed to load progress:", error);
   }
-  return {
-    answeredQuestions: {},
-    favorites: [],
-    lastViewed: {},
-  };
+  return defaultProgress;
 }
 
 export function saveAnswer(questionId: string, answer: string): void {

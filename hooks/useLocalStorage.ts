@@ -3,9 +3,15 @@ import { loadProgress, saveAnswer, toggleFavorite, isFavorite, saveLastViewed } 
 import { UserProgress } from "@/lib/types";
 
 export function useLocalStorage() {
-  const [progress, setProgress] = useState<UserProgress>(loadProgress());
+  const [progress, setProgress] = useState<UserProgress>({
+    answeredQuestions: {},
+    favorites: [],
+    lastViewed: {},
+  });
 
   useEffect(() => {
+    setProgress(loadProgress());
+
     const handleStorageChange = () => {
       setProgress(loadProgress());
     };
