@@ -61,7 +61,7 @@ export default function HomePage() {
       <div className="mesh-gradient" />
       
       {/* ヒーローセクション */}
-      <header className="relative pt-24 pb-16 px-6">
+      <header className="relative pt-16 pb-12 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -97,14 +97,14 @@ export default function HomePage() {
       </header>
 
       {/* メイングリッド */}
-      <main className="px-6 pb-24">
+      <main className="px-6 pb-16">
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
           className="max-w-5xl mx-auto"
         >
-          <div className="bento-grid">
+          <div className="bento-grid gap-4 sm:gap-6">
             {features.map((feature) => (
               <motion.div key={feature.id} variants={item} className={feature.size === "large" ? "bento-item-large" : ""}>
                 <Link
@@ -134,7 +134,7 @@ export default function HomePage() {
           </div>
 
           {/* クイック統計 / ヒント */}
-          <motion.div variants={item} className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <motion.div variants={item} className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="glass-card flex items-start gap-4 p-8">
               <div className="p-3 rounded-xl bg-white/5">
                 <Lightbulb className="w-5 h-5 text-white/60" />

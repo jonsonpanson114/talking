@@ -56,7 +56,7 @@ export default function CardsPage() {
     <div className="relative min-h-screen">
       <div className="mesh-gradient" />
       
-      <header className="relative pt-12 pb-8 px-6">
+      <header className="relative pt-8 pb-4 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -74,9 +74,9 @@ export default function CardsPage() {
         </div>
       </header>
 
-      <main className="relative px-6 pb-24 max-w-2xl mx-auto flex flex-col min-h-[60vh]">
+      <main className="relative px-6 pb-16 max-w-2xl mx-auto flex flex-col">
         {/* カテゴリ選択 */}
-        <div className="flex gap-2 overflow-x-auto pb-8 scrollbar-hide no-scrollbar">
+        <div className="flex gap-2 overflow-x-auto pb-6 scrollbar-hide no-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -103,10 +103,10 @@ export default function CardsPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full glass-card p-12 min-h-[400px] flex flex-col justify-between"
+              className="w-full glass-card p-8 md:p-10 flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center justify-between mb-8">
                   <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/20">
                     Question {currentIndex + 1} / {totalQuestions}
                   </span>
@@ -118,7 +118,7 @@ export default function CardsPage() {
                   </button>
                 </div>
 
-                <h2 className="text-3xl md:text-4xl font-bold mb-12 leading-[1.3] tracking-tight">
+                <h2 className="text-2xl md:text-3xl font-bold mb-8 leading-[1.3] tracking-tight">
                   {currentQuestion.text}
                 </h2>
 
@@ -146,7 +146,7 @@ export default function CardsPage() {
                 )}
               </div>
 
-              <div className="mt-12 space-y-6">
+              <div className="mt-8 space-y-4">
                 <div className="space-y-2">
                   <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Internal Dialogue</label>
                   <textarea
@@ -176,7 +176,7 @@ export default function CardsPage() {
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-12 flex gap-4 w-full">
+          <div className="mt-8 flex gap-4 w-full">
             <button
               onClick={handlePrevious}
               disabled={currentIndex === 0}

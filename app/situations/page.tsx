@@ -60,7 +60,7 @@ export default function SituationsPage() {
     <div className="relative min-h-screen">
       <div className="mesh-gradient" />
       
-      <header className="relative pt-12 pb-8 px-6">
+      <header className="relative pt-8 pb-4 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -78,7 +78,7 @@ export default function SituationsPage() {
         </div>
       </header>
 
-      <main className="relative px-6 pb-24 max-w-3xl mx-auto space-y-12">
+      <main className="relative px-6 pb-16 max-w-3xl mx-auto space-y-8">
         <div className="space-y-8">
           {/* 検索エリア */}
           <div className="relative group">

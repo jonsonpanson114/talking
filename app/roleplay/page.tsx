@@ -181,7 +181,7 @@ export default function RoleplayPage() {
     <div className="relative min-h-screen">
       <div className="mesh-gradient" />
       
-      <header className="relative pt-12 pb-8 px-6">
+      <header className="relative pt-8 pb-4 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -208,7 +208,7 @@ export default function RoleplayPage() {
               animate="visible"
               exit={{ opacity: 0, y: -10 }}
               variants={fadeIn}
-              className="space-y-12"
+              className="space-y-8"
             >
               <div>
                 <h1 className="text-4xl font-bold mb-2 tracking-tight">Roleplay Session</h1>
@@ -240,14 +240,14 @@ export default function RoleplayPage() {
               </div>
 
               {/* シチュエーション */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Contextual Scenario</label>
                 <div className="grid grid-cols-1 gap-3">
                   {roleplayScenarios.map((scenario) => (
                     <button
                       key={scenario.id}
                       onClick={() => setSettings({ ...settings, scenarioId: scenario.id })}
-                      className={`glass-card text-left p-6 group transition-all duration-500 ${
+                      className={`glass-card text-left p-5 group transition-all duration-500 ${
                         settings.scenarioId === scenario.id ? "bg-white/[0.08] ring-1 ring-white/20" : "opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
                       }`}
                     >
@@ -262,7 +262,7 @@ export default function RoleplayPage() {
               </div>
 
               {/* 相手タイプとペルソナ */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Partner Vibration</label>
                   <div className="space-y-2">
@@ -326,7 +326,7 @@ export default function RoleplayPage() {
               animate="visible"
               exit={{ opacity: 0 }}
               variants={fadeIn}
-              className="flex flex-col h-[70vh]"
+              className="flex flex-col h-[75vh]"
             >
               {/* 会話ヘッダー */}
               <div className="glass-card mb-6 p-4 flex items-center justify-between">

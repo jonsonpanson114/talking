@@ -171,7 +171,7 @@ export default function ThisOrThatPage() {
     <div className="relative min-h-screen">
       <div className="mesh-gradient" />
       
-      <header className="relative pt-12 pb-8 px-6">
+      <header className="relative pt-8 pb-4 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -189,7 +189,7 @@ export default function ThisOrThatPage() {
         </div>
       </header>
 
-      <main className="relative px-6 pb-24 max-w-3xl mx-auto">
+      <main className="relative px-6 pb-16 max-w-3xl mx-auto">
         <AnimatePresence mode="wait">
           {!showResult ? (
             <motion.div
@@ -207,7 +207,7 @@ export default function ThisOrThatPage() {
                 </h1>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
                 <button
                   onClick={() => handleChoice("this")}
                   className={`group glass-card p-10 text-left transition-all duration-700 relative overflow-hidden ${
@@ -243,7 +243,7 @@ export default function ThisOrThatPage() {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between pt-12">
+              <div className="flex items-center justify-between pt-8">
                 <button
                   onClick={handlePrev}
                   disabled={currentIndex === 0}
