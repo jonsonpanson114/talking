@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Home, Send, User, Bot, RotateCcw, CheckCircle, Target } from "lucide-react";
+import { Home, Send, User, Bot, RotateCcw, CheckCircle, Target, Sparkles, ArrowRight, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { questions } from "@/lib/data/questions";
 import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, ConversationMessage, ConversationSettings } from "@/lib/types";
@@ -23,10 +24,10 @@ export default function RoleplayPage() {
   const [evaluation, setEvaluation] = useState<ConversationEvaluation | null>(null);
 
   const personas = [
-    { id: "casual", label: "カジュアル", description: "リラックス、気さくな感じ" },
-    { id: "serious", label: "少し真面目", description: "誠実、聞き上手" },
-    { id: "humorous", label: "ユーモラス", description: "冗談を交えて楽しく" },
-    { id: "cool", label: "クール", description: "短めの会話、主導的" },
+    { id: "casual", label: "Casual", description: "リラックス、気さくな感じ" },
+    { id: "serious", label: "Serious", description: "誠実、聞き上手" },
+    { id: "humorous", label: "Humorous", description: "冗談を交えて楽しく" },
+    { id: "cool", label: "Cool", description: "短めの会話、主導的" },
   ] as const;
 
   const selectedScenario = useMemo(
@@ -171,345 +172,349 @@ export default function RoleplayPage() {
     setEvaluation(null);
   };
 
-  if (step === "settings") {
-    return (
-      <div className="min-h-screen flex flex-col p-4">
-        <header className="mb-6">
+  const fadeIn = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+  };
+
+  return (
+    <div className="relative min-h-screen">
+      <div className="mesh-gradient" />
+      
+      <header className="relative pt-12 pb-8 px-6">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
+            className="group flex items-center gap-2 text-white/30 hover:text-white transition-colors duration-300"
           >
-            <Home className="w-5 h-5" />
-            <span className="text-sm">トップ</span>
+            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-medium uppercase tracking-widest">Back to Studio</span>
           </Link>
-        </header>
+          <div className="flex items-center gap-2">
+            <Bot className="w-4 h-4 text-white/20" />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/20">
+              Neural Assistant Active
+            </span>
+          </div>
+        </div>
+      </header>
 
-        <main className="flex-1 max-w-2xl mx-auto w-full">
-          <h1 className="text-2xl font-bold mb-2 text-center">出会う前ロールプレイ設定</h1>
-          <p className="text-center text-text-secondary mb-6">シチュエーションと相手タイプを選んで実戦練習</p>
-
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">あなたの名前</label>
-                <input
-                  type="text"
-                  value={settings.userName}
-                  onChange={(e) => setSettings({ ...settings, userName: e.target.value })}
-                  placeholder="例: 太郎"
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-text-primary placeholder:text-text-secondary focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">相手の名前（AI）</label>
-                <input
-                  type="text"
-                  value={settings.partnerName}
-                  onChange={(e) => setSettings({ ...settings, partnerName: e.target.value })}
-                  placeholder="例: 花子"
-                  className="w-full px-4 py-3 rounded-xl bg-card border border-border text-text-primary placeholder:text-text-secondary focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">シチュエーション</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {roleplayScenarios.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    onClick={() => setSettings({ ...settings, scenarioId: scenario.id })}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      settings.scenarioId === scenario.id
-                        ? "bg-emerald-500/10 border-emerald-400"
-                        : "bg-card border-border hover:bg-card-hover"
-                    }`}
-                  >
-                    <div className="font-semibold mb-1">{scenario.label}</div>
-                    <div className="text-xs text-text-secondary mb-1">{scenario.description}</div>
-                    <div className="text-xs text-emerald-300">目標: {scenario.objective}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">相手タイプ</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {partnerStyles.map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => setSettings({ ...settings, partnerStyleId: style.id })}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      settings.partnerStyleId === style.id
-                        ? "bg-sky-500/10 border-sky-400"
-                        : "bg-card border-border hover:bg-card-hover"
-                    }`}
-                  >
-                    <div className="font-semibold mb-1">{style.label}</div>
-                    <div className="text-xs text-text-secondary">{style.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">相手の会話トーン</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {personas.map((persona) => (
-                  <button
-                    key={persona.id}
-                    onClick={() => setSettings({ ...settings, persona: persona.id })}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      settings.persona === persona.id
-                        ? "bg-accent/20 border-accent text-accent"
-                        : "bg-card border-border hover:bg-card-hover"
-                    }`}
-                  >
-                    <div className="font-semibold">{persona.label}</div>
-                    <div className="text-xs text-text-secondary mt-1">{persona.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">会話の最初に使う話題</label>
-              <select
-                value={selectedQuestion.id}
-                onChange={(e) => setSelectedQuestion(questions.find((q) => q.id === e.target.value) || questions[0])}
-                className="w-full px-4 py-3 rounded-xl bg-card border border-border text-text-primary focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none"
-              >
-                {questions
-                  .filter((q) => q.type === "standard")
-                  .map((q) => (
-                    <option key={q.id} value={q.id}>
-                      {q.text}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-4 text-sm text-text-secondary">
-              <p className="font-semibold text-text-primary mb-1">今回の練習設定</p>
-              <p>シチュエーション: {selectedScenario.label}</p>
-              <p>相手タイプ: {selectedPartnerStyle.label}</p>
-            </div>
-
-            <button
-              onClick={handleStartConversation}
-              disabled={!settings.userName || !settings.partnerName || isLoading}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 text-white font-bold hover:from-emerald-600 hover:to-sky-600 disabled:opacity-50 disabled:cursor-not-allowed"
+      <main className="relative px-6 pb-24 max-w-3xl mx-auto">
+        <AnimatePresence mode="wait">
+          {step === "settings" && (
+            <motion.div
+              key="settings"
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, y: -10 }}
+              variants={fadeIn}
+              className="space-y-12"
             >
-              {isLoading ? "準備中..." : "ロールプレイ開始"}
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (step === "play") {
-    return (
-      <div className="min-h-screen flex flex-col p-4">
-        <header className="mb-4 flex items-center justify-between">
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <RotateCcw className="w-5 h-5" />
-            <span className="text-sm">設定に戻る</span>
-          </button>
-          <div className="text-center">
-            <p className="text-xs text-text-secondary">{selectedScenario.label}</p>
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-accent" />
-              <span className="text-text-primary font-semibold">{settings.userName}</span>
-              <span className="text-text-secondary">vs</span>
-              <Bot className="w-5 h-5 text-emerald-400" />
-              <span className="text-text-primary font-semibold">{settings.partnerName}</span>
-            </div>
-          </div>
-          <div />
-        </header>
-
-        <main className="flex-1 flex flex-col max-w-2xl mx-auto w-full">
-          <div className="mb-3 rounded-xl border border-border bg-card px-4 py-2 text-sm text-text-secondary">
-            目標: {selectedScenario.objective}
-          </div>
-
-          <div className="flex-1 space-y-4 overflow-y-auto mb-4">
-            {messages.map((message, index) => (
-              <div key={index} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                {message.role === "assistant" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <Bot className="w-5 h-5 text-white" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                    message.role === "user"
-                      ? "bg-accent text-white"
-                      : "bg-card text-text-primary border border-border"
-                  }`}
-                >
-                  <p className="text-sm md:text-base whitespace-pre-wrap">{message.content}</p>
-                  <p className="text-xs text-text-secondary mt-1">
-                    {new Date(message.timestamp).toLocaleTimeString("ja-JP", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </div>
-                {message.role === "user" && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                )}
+              <div>
+                <h1 className="text-4xl font-bold mb-2 tracking-tight">Roleplay Session</h1>
+                <p className="text-white/30 font-light">会話のシチュエーションと相手のタイプを設定します。</p>
               </div>
-            ))}
 
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
+              {/* 名前入力 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Your Identity</label>
+                  <input
+                    type="text"
+                    value={settings.userName}
+                    onChange={(e) => setSettings({ ...settings, userName: e.target.value })}
+                    placeholder="自分の名前"
+                    className="input-elegant w-full"
+                  />
                 </div>
-                <div className="px-4 py-3 rounded-2xl bg-card border border-border">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 rounded-full bg-text-secondary animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 rounded-full bg-text-secondary animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 rounded-full bg-text-secondary animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Partner Persona</label>
+                  <input
+                    type="text"
+                    value={settings.partnerName}
+                    onChange={(e) => setSettings({ ...settings, partnerName: e.target.value })}
+                    placeholder="相手の名前"
+                    className="input-elegant w-full"
+                  />
                 </div>
               </div>
-            )}
-          </div>
 
-          <div className="flex gap-3">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="返答を入力...（Shift+Enterで改行）"
-              className="flex-1 px-4 py-3 rounded-xl bg-card border border-border text-text-primary placeholder:text-text-secondary focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none resize-none max-h-32"
-              rows={1}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!input.trim() || isLoading}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
-
-          <button
-            onClick={handleEndConversation}
-            disabled={messages.length < 2 || isLoading}
-            className="w-full mt-4 py-3 rounded-xl bg-card border border-border text-text-secondary hover:border-accent hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            会話を終了して評価を見る
-          </button>
-        </main>
-      </div>
-    );
-  }
-
-  if (step === "result" && evaluation) {
-    return (
-      <div className="min-h-screen flex flex-col p-4">
-        <header className="mb-4">
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <RotateCcw className="w-5 h-5" />
-            <span className="text-sm">設定に戻る</span>
-          </button>
-        </header>
-
-        <main className="flex-1 overflow-y-auto max-w-2xl mx-auto pb-8 w-full">
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-emerald-500 to-sky-500 rounded-2xl p-6 text-center">
-              <h2 className="text-lg text-white/80 mb-2">総合スコア</h2>
-              <div className="text-5xl font-bold text-white">
-                {evaluation.score}
-                <span className="text-2xl text-white/80">/100</span>
-              </div>
-              <p className="mt-2 text-white/80 text-sm">{selectedScenario.label} の練習結果</p>
-            </div>
-
-            <div className="bg-amber-500/10 border border-amber-400/30 rounded-2xl p-5">
-              <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                <Target className="w-5 h-5 text-amber-300" />
-                次回まず直す1つ
-              </h3>
-              <p className="text-text-primary mb-3">{evaluation.oneFocusImprovement}</p>
-              <p className="text-xs text-text-secondary">そのまま使える例文</p>
-              <p className="text-sm text-amber-200 mt-1">「{evaluation.nextMessageExample}」</p>
-            </div>
-
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <h3 className="text-lg font-semibold mb-4">恋愛会話向け指標</h3>
+              {/* シチュエーション */}
               <div className="space-y-4">
-                {[
-                  { label: "質問の質", score: evaluation.curiosityScore },
-                  { label: "自己開示", score: evaluation.selfDisclosureScore },
-                  { label: "共感", score: evaluation.empathyScore },
-                  { label: "押しすぎない進行", score: evaluation.paceScore },
-                  { label: "次につなぐ力", score: evaluation.nextStepScore },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-text-secondary">{item.label}</span>
-                      <span className="font-semibold">{item.score}/100</span>
+                <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Contextual Scenario</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {roleplayScenarios.map((scenario) => (
+                    <button
+                      key={scenario.id}
+                      onClick={() => setSettings({ ...settings, scenarioId: scenario.id })}
+                      className={`glass-card text-left p-6 group transition-all duration-500 ${
+                        settings.scenarioId === scenario.id ? "bg-white/[0.08] ring-1 ring-white/20" : "opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-semibold">{scenario.label}</h3>
+                        <div className={`w-2 h-2 rounded-full transition-all duration-500 ${settings.scenarioId === scenario.id ? "bg-white" : "bg-white/10"}`} />
+                      </div>
+                      <p className="text-sm text-white/40 font-light leading-relaxed">{scenario.context}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 相手タイプとペルソナ */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="space-y-4">
+                  <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Partner Vibration</label>
+                  <div className="space-y-2">
+                    {partnerStyles.map((style) => (
+                      <button
+                        key={style.id}
+                        onClick={() => setSettings({ ...settings, partnerStyleId: style.id })}
+                        className={`w-full glass p-4 rounded-xl text-left text-sm transition-all duration-300 ${
+                          settings.partnerStyleId === style.id ? "bg-white/10 text-white" : "text-white/30 hover:bg-white/5"
+                        }`}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Tone & Manner</label>
+                  <div className="space-y-2">
+                    {personas.map((persona) => (
+                      <button
+                        key={persona.id}
+                        onClick={() => setSettings({ ...settings, persona: persona.id })}
+                        className={`w-full glass p-4 rounded-xl text-left text-sm transition-all duration-300 ${
+                          settings.persona === persona.id ? "bg-white/10 text-white" : "text-white/30 hover:bg-white/5"
+                        }`}
+                      >
+                        {persona.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 開始ボタン */}
+              <button
+                onClick={handleStartConversation}
+                disabled={!settings.userName || !settings.partnerName || isLoading}
+                className="btn-primary w-full group"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-black animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-black animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-black animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <span>Initialize Session</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                )}
+              </button>
+            </motion.div>
+          )}
+
+          {step === "play" && (
+            <motion.div
+              key="play"
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              variants={fadeIn}
+              className="flex flex-col h-[70vh]"
+            >
+              {/* 会話ヘッダー */}
+              <div className="glass-card mb-6 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full glass flex items-center justify-center text-white/40">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-white/20 font-bold leading-none mb-1">Session Target</p>
+                    <h2 className="text-sm font-semibold">{settings.partnerName}</h2>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase tracking-widest text-white/20 font-bold leading-none mb-1">Scenario</p>
+                  <p className="text-xs font-light text-white/60">{selectedScenario.label}</p>
+                </div>
+              </div>
+
+              {/* メッセージエリア */}
+              <div className="flex-1 overflow-y-auto space-y-6 pr-4 scrollbar-hide">
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={`max-w-[85%] px-6 py-4 rounded-3xl text-sm leading-relaxed ${
+                      message.role === "user" 
+                        ? "bg-white text-black font-medium rounded-tr-none shadow-xl" 
+                        : "glass rounded-tl-none font-light text-white/80"
+                    }`}>
+                      {message.content}
+                      <div className={`text-[9px] mt-2 opacity-30 ${message.role === "user" ? "text-black" : "text-white"}`}>
+                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
-                    <div className="h-2 bg-card-hover rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-sky-500 transition-all"
-                        style={{ width: `${item.score}%` }}
-                      />
+                  </motion.div>
+                ))}
+                
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="glass px-6 py-4 rounded-3xl rounded-tl-none">
+                      <div className="flex gap-1.5">
+                        <div className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-1 h-1 rounded-full bg-white/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
 
-            {evaluation.goodMoments.length > 0 && (
-              <div className="bg-card rounded-2xl border border-border p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  良かった瞬間
-                </h3>
-                <div className="space-y-4">
-                  {evaluation.goodMoments.map((moment, index) => (
-                    <div key={index} className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                      <p className="text-sm text-text-secondary mb-1">{moment.turn}ターン目</p>
-                      <p className="text-text-primary mb-2">「{moment.quote}」</p>
-                      <p className="text-sm text-green-400">{moment.reason}</p>
+              {/* 入力エリア */}
+              <div className="pt-8 space-y-4">
+                <div className="relative group">
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="Type your message..."
+                    className="input-elegant w-full min-h-[80px] pr-20 resize-none pt-6"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="absolute right-4 bottom-4 glass w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white/40 hover:text-white"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="flex justify-between items-center px-2">
+                  <p className="text-[9px] text-white/20 uppercase tracking-[0.2em]">Neural Link Stable</p>
+                  <button
+                    onClick={handleEndConversation}
+                    disabled={messages.length < 2 || isLoading}
+                    className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white transition-colors"
+                  >
+                    Terminate & Analyze
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === "result" && evaluation && (
+            <motion.div
+              key="result"
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              variants={fadeIn}
+              className="space-y-12"
+            >
+              <div className="text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] font-semibold text-white/20 mb-4">Final Evaluation</p>
+                <div className="relative inline-block">
+                  <span className="text-9xl font-bold tracking-tighter">{evaluation.score}</span>
+                  <span className="absolute -right-8 top-4 text-2xl font-light text-white/20">/100</span>
+                </div>
+              </div>
+
+              {/* メインインサイト */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass-card p-8 border-white/20 bg-white/[0.05]">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Target className="w-5 h-5 text-white/40" />
+                    <h3 className="text-xs uppercase tracking-widest font-bold text-white/60">Primary Focus</h3>
+                  </div>
+                  <p className="text-lg font-medium leading-relaxed mb-6">{evaluation.oneFocusImprovement}</p>
+                  <div className="glass p-4 rounded-xl border-white/5">
+                    <p className="text-[9px] uppercase tracking-wider text-white/20 mb-2">Example Phrase</p>
+                    <p className="text-sm italic text-white/80">"{evaluation.nextMessageExample}"</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="glass-card p-6">
+                    <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/20 mb-6">Performance Matrix</h3>
+                    <div className="space-y-4">
+                      {[
+                        { label: "Curiosity", score: evaluation.curiosityScore },
+                        { label: "Empathy", score: evaluation.empathyScore },
+                        { label: "Pace", score: evaluation.paceScore },
+                        { label: "Naturalness", score: evaluation.naturalnessScore },
+                      ].map((m) => (
+                        <div key={m.label} className="space-y-2">
+                          <div className="flex justify-between text-[10px] font-medium tracking-wider uppercase text-white/40">
+                            <span>{m.label}</span>
+                            <span>{m.score}%</span>
+                          </div>
+                          <div className="h-1 glass rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${m.score}%` }}
+                              transition={{ duration: 1.5, ease: "easeOut" }}
+                              className="h-full bg-white"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 特筆すべき点 */}
+              <div className="glass-card p-8">
+                <div className="flex items-center gap-3 mb-8">
+                  <CheckCircle className="w-5 h-5 text-white/40" />
+                  <h3 className="text-xs uppercase tracking-widest font-bold text-white/60">Key Moments</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {evaluation.goodMoments.map((moment, i) => (
+                    <div key={i} className="space-y-3">
+                      <p className="text-[9px] uppercase font-bold text-white/20">Turn {moment.turn}</p>
+                      <p className="text-sm font-medium">"{moment.quote}"</p>
+                      <p className="text-xs text-white/40 font-light leading-relaxed">{moment.reason}</p>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
 
-            {evaluation.partnerTypeTips && (
-              <div className="bg-card rounded-2xl border border-border p-6">
-                <h3 className="text-lg font-semibold mb-3">今回の相手タイプ向けヒント</h3>
-                <p className="text-text-primary leading-relaxed">{evaluation.partnerTypeTips}</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={handleReset}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Start New Session</span>
+                </button>
+                <Link
+                  href="/"
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Exit to Studio</span>
+                </Link>
               </div>
-            )}
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  return null;
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
 }

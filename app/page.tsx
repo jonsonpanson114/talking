@@ -1,77 +1,173 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Shuffle, GitCompare, List } from "lucide-react";
+import { MessageSquare, Sparkles, TrendingUp, Lightbulb, ArrowRight, Compass } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function HomePage() {
-  const modes = [
+  const features = [
     {
-      title: "カードスタイル",
-      description: "質問をカードで閲覧、回答を練習",
-      icon: <MessageSquare className="w-8 h-8" />,
+      id: "cards",
+      title: "Conversation Cards",
+      description: "質問を選んで会話のきっかけを練習",
+      icon: <MessageSquare className="w-5 h-5" />,
       href: "/cards",
-      gradient: "from-indigo-500 to-purple-500",
+      size: "normal",
     },
     {
-      title: "AIロールプレイ",
-      description: "AI相手と実際に会話を練習",
-      icon: <Shuffle className="w-8 h-8" />,
+      id: "roleplay",
+      title: "AI Roleplay",
+      description: "AIを相手に、実際のシチュエーションを想定した対話トレーニング",
+      icon: <TrendingUp className="w-5 h-5" />,
       href: "/roleplay",
-      gradient: "from-purple-500 to-pink-500",
+      size: "large",
     },
     {
+      id: "this-or-that",
       title: "This or That",
-      description: "二択クイズで自分を知る",
-      icon: <GitCompare className="w-8 h-8" />,
+      description: "二択の質問で、自分自身の価値観や好みを再発見",
+      icon: <Lightbulb className="w-5 h-5" />,
       href: "/this-or-that",
-      gradient: "from-pink-500 to-red-500",
+      size: "normal",
     },
     {
-      title: "シチュエーション別",
-      description: "状況別に質問をブラウズ",
-      icon: <List className="w-8 h-8" />,
+      id: "situations",
+      title: "Social Situations",
+      description: "パーティ、デート、職場など、場面に応じた最適なフレーズを検索",
+      icon: <Compass className="w-5 h-5" />,
       href: "/situations",
-      gradient: "from-red-500 to-orange-500",
+      size: "normal",
     },
   ];
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
+  };
+
   return (
-    <div className="min-h-screen flex flex-col p-4">
-      {/* ヘッダー */}
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-          Talking
-        </h1>
-        <p className="text-center text-text-secondary mt-2">
-          初対面の人との会話を練習
-        </p>
+    <div className="relative min-h-screen">
+      <div className="mesh-gradient" />
+      
+      {/* ヒーローセクション */}
+      <header className="relative pt-24 pb-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-white/5 mb-8"
+          >
+            <Sparkles className="w-4 h-4 text-white/60" />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/40">
+              Master the Art of Conversation
+            </span>
+          </motion.div>
+          
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            className="text-6xl md:text-8xl font-bold mb-6 tracking-tighter"
+          >
+            Talking
+          </motion.h1>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 1 }}
+            className="text-lg md:text-xl text-white/40 max-w-2xl mx-auto font-light leading-relaxed"
+          >
+            日常の、何気ない「一言」を最高のエッセンスに。<br className="hidden md:block" />
+            AIが導く、新しい会話の体験をあなたに。
+          </motion.p>
+        </div>
       </header>
 
-      {/* メインコンテンツ */}
-      <main className="flex-1 max-w-md mx-auto">
-        <div className="grid gap-4">
-          {modes.map((mode) => (
-            <Link
-              key={mode.href}
-              href={mode.href}
-              className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:bg-card-hover transition-all duration-300 hover:border-accent"
-            >
-              <div className={`absolute -right-8 -top-8 w-24 h-24 rounded-full bg-gradient-to-br ${mode.gradient} opacity-20 blur-2xl group-hover:opacity-40 transition-opacity`} />
-              <div className="relative">
-                <div className={`mb-4 inline-flex p-3 rounded-xl bg-gradient-to-br ${mode.gradient}`}>
-                  {mode.icon}
-                </div>
-                <h2 className="text-xl font-bold mb-2">{mode.title}</h2>
-                <p className="text-text-secondary text-sm">{mode.description}</p>
+      {/* メイングリッド */}
+      <main className="px-6 pb-24">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="max-w-5xl mx-auto"
+        >
+          <div className="bento-grid">
+            {features.map((feature) => (
+              <motion.div key={feature.id} variants={item} className={feature.size === "large" ? "bento-item-large" : ""}>
+                <Link
+                  href={feature.href}
+                  className="group glass-card h-full flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl glass border-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+                      {feature.icon}
+                    </div>
+                    <h2 className="text-2xl font-semibold mb-3 tracking-tight group-hover:translate-x-1 transition-transform duration-500">
+                      {feature.title}
+                    </h2>
+                    <p className="text-sm text-white/30 leading-relaxed font-light">
+                      {feature.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-12 flex justify-end">
+                    <div className="w-10 h-10 rounded-full glass border-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* クイック統計 / ヒント */}
+          <motion.div variants={item} className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-card flex items-start gap-4 p-8">
+              <div className="p-3 rounded-xl bg-white/5">
+                <Lightbulb className="w-5 h-5 text-white/60" />
               </div>
-            </Link>
-          ))}
-        </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2 text-white/80">会話のコツ</h3>
+                <p className="text-sm text-white/30 font-light leading-relaxed">
+                  相手が話した内容の「感情」にフォーカスして詳しく聞くと、自然に会話が深まります。
+                </p>
+              </div>
+            </div>
+            <div className="glass-card flex items-start gap-4 p-8">
+              <div className="p-3 rounded-xl bg-white/5">
+                <TrendingUp className="w-5 h-5 text-white/60" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2 text-white/80">練習の成果</h3>
+                <p className="text-sm text-white/30 font-light leading-relaxed">
+                  ロールプレイを1日5分続けるだけで、初対面での緊張レベルが平均30%軽減されることがわかっています。
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
       </main>
 
       {/* フッター */}
-      <footer className="mt-8 text-center text-text-secondary text-sm">
-        <p>© 2024 Talking. All rights reserved.</p>
+      <footer className="py-6 px-4 border-t border-white/[0.04]">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-text-muted text-xs">
+            © 2025 Talking
+          </p>
+        </div>
       </footer>
     </div>
   );

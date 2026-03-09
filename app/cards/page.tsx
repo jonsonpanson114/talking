@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Shuffle, Heart, Lightbulb, Home } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shuffle, Heart, Lightbulb, Home, ArrowUpRight, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { questions, categories } from "@/lib/data/questions";
-import { useLocalStorage, useMouseDownSwipe } from "@/hooks";
-import { Question } from "@/lib/types";
+import { useLocalStorage } from "@/hooks";
 import Link from "next/link";
 
 export default function CardsPage() {
   const { progress, saveAnswer, toggleFavorite, isFavorite } = useLocalStorage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [showAnswer, setShowAnswer] = useState(false);
+  const [showTips, setShowTips] = useState(false);
   const [userAnswer, setUserAnswer] = useState("");
 
   const filteredQuestions =
@@ -25,7 +25,7 @@ export default function CardsPage() {
   const handlePrevious = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      setShowAnswer(false);
+      setShowTips(false);
       setUserAnswer("");
     }
   };
@@ -33,191 +33,167 @@ export default function CardsPage() {
   const handleNext = () => {
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex(currentIndex + 1);
-      setShowAnswer(false);
+      setShowTips(false);
       setUserAnswer("");
     }
   };
 
   const handleShuffle = () => {
-    const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
-    const newCurrentIndex = shuffled.findIndex((q) => q.id === currentQuestion.id);
-    setCurrentIndex(newCurrentIndex);
-    setShowAnswer(false);
+    const shuffledIdx = Math.floor(Math.random() * totalQuestions);
+    setCurrentIndex(shuffledIdx);
+    setShowTips(false);
     setUserAnswer("");
   };
 
   const handleSaveAnswer = () => {
     if (userAnswer.trim()) {
       saveAnswer(currentQuestion.id, userAnswer);
-      setShowAnswer(true);
+      setUserAnswer("");
     }
   };
 
-  const { onMouseDown, onMouseUp } = useMouseDownSwipe({
-    onSwipeLeft: handleNext,
-    onSwipeRight: handlePrevious,
-  });
-
-  const isFav = isFavorite(currentQuestion.id);
-
-  if (!currentQuestion) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <p className="text-text-secondary mb-4">質問が見つかりません</p>
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-accent hover:text-accent-hover transition-colors"
-        >
-          <Home className="w-4 h-4" />
-          トップに戻る
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col p-4">
-      {/* ヘッダー */}
-      <header className="mb-4 flex items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-sm">トップ</span>
-        </Link>
-        <span className="text-text-secondary text-sm">
-          {currentIndex + 1} / {totalQuestions}
-        </span>
-      </header>
-
-      {/* カテゴリフィルター */}
-      <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => {
-              setSelectedCategory(cat.id);
-              setCurrentIndex(0);
-              setShowAnswer(false);
-              setUserAnswer("");
-            }}
-            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-              selectedCategory === cat.id
-                ? "bg-accent text-white"
-                : "bg-card text-text-secondary hover:bg-card-hover"
-            }`}
+    <div className="relative min-h-screen">
+      <div className="mesh-gradient" />
+      
+      <header className="relative pt-12 pb-8 px-6">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <Link
+            href="/"
+            className="group flex items-center gap-2 text-white/30 hover:text-white transition-colors duration-300"
           >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* メインコンテンツ */}
-      <main className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto">
-        <div
-          className="relative w-full"
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-        >
-          {/* カード */}
-          <div className="relative bg-card border border-border rounded-2xl p-6 shadow-2xl hover:shadow-accent/20 hover:border-accent/50 transition-all duration-300">
-            {/* カテゴリバッジ */}
-            <div className="mb-4">
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-accent/20 text-accent text-xs">
-                {categories.find((c) => c.id === currentQuestion.category)?.label}
-              </span>
-            </div>
-
-            {/* 質問 */}
-            <h2 className="text-xl md:text-2xl font-bold mb-6 leading-relaxed">
-              {currentQuestion.text}
-            </h2>
-
-            {/* ヒント表示エリア */}
-            {currentQuestion.tips && (
-              <div className="mb-4 p-4 rounded-xl bg-card-hover border border-border">
-                <button
-                  onClick={() => setShowAnswer(!showAnswer)}
-                  className="flex items-center gap-2 w-full text-left text-text-secondary hover:text-text-primary transition-colors"
-                >
-                  <Lightbulb className="w-4 h-4" />
-                  <span className="text-sm">ヒント</span>
-                </button>
-                <p className="mt-2 text-sm text-text-secondary">
-                  {currentQuestion.tips}
-                </p>
-              </div>
-            )}
-
-            {/* 回答入力エリア */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">
-                  自分の返答を考えてみてください
-                </label>
-                <textarea
-                  value={userAnswer}
-                  onChange={(e) => setUserAnswer(e.target.value)}
-                  placeholder="ここに返答を入力..."
-                  className="w-full min-h-32 px-4 py-3 rounded-xl bg-background border border-border text-text-primary placeholder:text-text-secondary focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none transition-all resize-none"
-                />
-              </div>
-
-              {/* 保存済みの回答を表示 */}
-              {showAnswer && progress.answeredQuestions[currentQuestion.id] && (
-                <div className="p-4 rounded-xl bg-accent/10 border border-accent/30">
-                  <p className="text-sm text-text-secondary mb-1">前回の回答:</p>
-                  <p className="text-text-primary">
-                    {progress.answeredQuestions[currentQuestion.id]}
-                  </p>
-                </div>
-              )}
-
-              {/* 保存ボタン */}
-              <button
-                onClick={handleSaveAnswer}
-                disabled={!userAnswer.trim()}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                回答を保存
-              </button>
-            </div>
-          </div>
-
-          {/* お気に入りボタン */}
-          <button
-            onClick={() => toggleFavorite(currentQuestion.id)}
-            className="absolute -top-3 -right-3 p-3 rounded-full bg-card border border-border hover:bg-card-hover transition-all hover:border-accent"
-          >
-            <Heart
-              className={`w-6 h-6 ${isFav ? "fill-red-500 text-red-500" : "text-text-secondary"}`}
-            />
-          </button>
-        </div>
-
-        {/* ナビゲーションボタン */}
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <button
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className="p-3 rounded-full bg-card border border-border hover:bg-card-hover hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-medium uppercase tracking-widest">Back to Studio</span>
+          </Link>
           <button
             onClick={handleShuffle}
-            className="p-3 rounded-full bg-card border border-border hover:bg-card-hover hover:border-accent transition-all"
+            className="glass p-3 rounded-2xl text-white/40 hover:text-white transition-all duration-300"
           >
-            <Shuffle className="w-5 h-5 text-accent" />
+            <Shuffle className="w-4 h-4" />
           </button>
-          <button
-            onClick={handleNext}
-            disabled={currentIndex === totalQuestions - 1}
-            className="p-3 rounded-full bg-card border border-border hover:bg-card-hover hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
-            <ArrowRight className="w-5 h-5" />
-          </button>
+        </div>
+      </header>
+
+      <main className="relative px-6 pb-24 max-w-2xl mx-auto flex flex-col min-h-[60vh]">
+        {/* カテゴリ選択 */}
+        <div className="flex gap-2 overflow-x-auto pb-8 scrollbar-hide no-scrollbar">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+                setCurrentIndex(0);
+              }}
+              className={`px-6 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold transition-all duration-300 whitespace-nowrap ${
+                selectedCategory === cat.id
+                  ? "bg-white text-black"
+                  : "glass text-white/30 hover:text-white/60"
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentQuestion.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full glass-card p-12 min-h-[400px] flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-12">
+                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/20">
+                    Question {currentIndex + 1} / {totalQuestions}
+                  </span>
+                  <button
+                    onClick={() => toggleFavorite(currentQuestion.id)}
+                    className={`transition-all duration-300 ${isFavorite(currentQuestion.id) ? "text-white scale-125" : "text-white/10 hover:text-white/30"}`}
+                  >
+                    <Heart className={`w-5 h-5 ${isFavorite(currentQuestion.id) ? "fill-current" : ""}`} />
+                  </button>
+                </div>
+
+                <h2 className="text-3xl md:text-4xl font-bold mb-12 leading-[1.3] tracking-tight">
+                  {currentQuestion.text}
+                </h2>
+
+                {currentQuestion.tips && (
+                  <div className="space-y-4">
+                    <button
+                      onClick={() => setShowTips(!showTips)}
+                      className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white/60 transition-colors"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" />
+                      <span>{showTips ? "Close Inspiration" : "Seek Inspiration"}</span>
+                    </button>
+                    {showTips && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="glass p-6 rounded-2xl border-white/5"
+                      >
+                        <p className="text-sm text-white/40 font-light leading-relaxed">
+                          {currentQuestion.tips}
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-12 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Internal Dialogue</label>
+                  <textarea
+                    value={userAnswer}
+                    onChange={(e) => setUserAnswer(e.target.value)}
+                    placeholder="自分の考えや返答をメモ..."
+                    className="input-elegant w-full min-h-[100px] resize-none pt-4"
+                  />
+                </div>
+                
+                {progress.answeredQuestions[currentQuestion.id] && !userAnswer && (
+                  <div className="glass p-4 rounded-xl border-white/5 opacity-40">
+                    <p className="text-[9px] uppercase tracking-wider text-white/40 mb-1">Previous Note</p>
+                    <p className="text-xs font-light">{progress.answeredQuestions[currentQuestion.id]}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSaveAnswer}
+                  disabled={!userAnswer.trim()}
+                  className="btn-primary w-full disabled:opacity-20 flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
+                >
+                  Save Reflection
+                  <ArrowUpRight className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="mt-12 flex gap-4 w-full">
+            <button
+              onClick={handlePrevious}
+              disabled={currentIndex === 0}
+              className="btn-secondary flex-1 flex items-center justify-center gap-2 disabled:opacity-10"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs uppercase tracking-widest">Previous</span>
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={currentIndex === totalQuestions - 1}
+              className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-10"
+            >
+              <span className="text-xs uppercase tracking-widest">Next</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </main>
     </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Home, RotateCcw, ChevronRight } from "lucide-react";
+import { Home, RotateCcw, ChevronRight, Sparkles, ArrowRight, ChevronLeft, Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { thisOrThatQuestions } from "@/lib/data/thisOrThatQuestions";
 import Link from "next/link";
 
@@ -161,155 +162,211 @@ export default function ThisOrThatPage() {
 
   const strongTrends = insights.filter((item) => item.confidence >= 20).slice(0, 3);
 
+  const fadeIn = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } },
+  };
+
   return (
-    <div className="min-h-screen flex flex-col p-4">
-      <header className="mb-4 flex items-center justify-between">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-sm">トップ</span>
-        </Link>
-        <span className="text-text-secondary text-sm">
-          {showResult ? `${history.length} / ${totalQuestions} 回答済み` : `${currentIndex + 1} / ${totalQuestions}`}
-        </span>
+    <div className="relative min-h-screen">
+      <div className="mesh-gradient" />
+      
+      <header className="relative pt-12 pb-8 px-6">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <Link
+            href="/"
+            className="group flex items-center gap-2 text-white/30 hover:text-white transition-colors duration-300"
+          >
+            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-medium uppercase tracking-widest">Back to Studio</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-white/20" />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/20">
+              Personal Vibration Check
+            </span>
+          </div>
+        </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
-        {!showResult ? (
-          <div className="w-full bg-card border border-border rounded-2xl p-6 md:p-8 shadow-xl">
-            <p className="text-sm text-text-secondary mb-2">傾向診断・全{totalQuestions}問</p>
-            <h2 className="text-xl md:text-2xl font-bold mb-8 leading-relaxed">{currentQuestion.text}</h2>
+      <main className="relative px-6 pb-24 max-w-3xl mx-auto">
+        <AnimatePresence mode="wait">
+          {!showResult ? (
+            <motion.div
+              key="quiz"
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0, y: -20 }}
+              variants={fadeIn}
+              className="space-y-12"
+            >
+              <div className="text-center">
+                <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-white/20 mb-4 block">Question {currentIndex + 1} of {totalQuestions}</span>
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight px-4 leading-[1.2]">
+                  {currentQuestion.text}
+                </h1>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button
-                onClick={() => handleChoice("this")}
-                className={`text-left rounded-2xl p-6 border transition-all hover:scale-[1.01] ${
-                  selected?.side === "this"
-                    ? "bg-emerald-500/15 border-emerald-400 text-white"
-                    : "bg-background border-border hover:border-emerald-400/60"
-                }`}
-              >
-                <p className="text-lg font-semibold">{currentQuestion.thisOption}</p>
-                <p className="text-sm text-text-secondary mt-2">こちらに近い</p>
-              </button>
-
-              <button
-                onClick={() => handleChoice("that")}
-                className={`text-left rounded-2xl p-6 border transition-all hover:scale-[1.01] ${
-                  selected?.side === "that"
-                    ? "bg-sky-500/15 border-sky-400 text-white"
-                    : "bg-background border-border hover:border-sky-400/60"
-                }`}
-              >
-                <p className="text-lg font-semibold">{currentQuestion.thatOption}</p>
-                <p className="text-sm text-text-secondary mt-2">こちらに近い</p>
-              </button>
-            </div>
-
-            <div className="mt-6 flex items-center justify-between gap-3">
-              <button
-                onClick={handlePrev}
-                disabled={currentIndex === 0}
-                className="px-4 py-2 rounded-xl bg-background border border-border text-text-secondary hover:bg-card-hover disabled:opacity-40"
-              >
-                前へ
-              </button>
-
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-12">
                 <button
-                  onClick={handleFinishNow}
-                  disabled={history.length < 3}
-                  className="px-4 py-2 rounded-xl bg-background border border-border text-text-secondary hover:bg-card-hover disabled:opacity-40"
+                  onClick={() => handleChoice("this")}
+                  className={`group glass-card p-10 text-left transition-all duration-700 relative overflow-hidden ${
+                    selected?.side === "this" ? "bg-white/[0.08] ring-1 ring-white/20 scale-[1.02]" : "opacity-40 grayscale hover:grayscale-0 hover:opacity-80"
+                  }`}
                 >
-                  ここまでで結果を見る
+                  <div className="relative z-10 flex flex-col justify-between h-full">
+                    <p className="text-xl md:text-2xl font-bold mb-4 tracking-tight leading-snug">
+                      {currentQuestion.thisOption}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-white/10 group-hover:text-white/20 transition-colors">Selection A</p>
+                  </div>
+                  {selected?.side === "this" && (
+                    <motion.div layoutId="selection-glow" className="absolute inset-0 bg-white/5 blur-3xl rounded-full" />
+                  )}
                 </button>
+
                 <button
-                  onClick={handleNext}
-                  disabled={!selected}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 text-white font-semibold disabled:opacity-40"
+                  onClick={() => handleChoice("that")}
+                  className={`group glass-card p-10 text-left transition-all duration-700 relative overflow-hidden ${
+                    selected?.side === "that" ? "bg-white/[0.08] ring-1 ring-white/20 scale-[1.02]" : "opacity-40 grayscale hover:grayscale-0 hover:opacity-80"
+                  }`}
                 >
-                  次へ
+                  <div className="relative z-10 flex flex-col justify-between h-full">
+                    <p className="text-xl md:text-2xl font-bold mb-4 tracking-tight leading-snug">
+                      {currentQuestion.thatOption}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-widest font-black text-white/10 group-hover:text-white/20 transition-colors">Selection B</p>
+                  </div>
+                  {selected?.side === "that" && (
+                    <motion.div layoutId="selection-glow" className="absolute inset-0 bg-white/5 blur-3xl rounded-full" />
+                  )}
                 </button>
               </div>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full">
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-8 mb-6">
-              <h3 className="text-2xl font-bold mb-2">診断結果</h3>
-              <p className="text-text-secondary mb-4">
-                正解はありません。あなたの選択傾向を可視化しています。
-                {!completed && " 途中終了なので、結果は現時点の回答ベースです。"}
-              </p>
 
-              {strongTrends.length > 0 ? (
-                <div className="space-y-2">
-                  {strongTrends.map((trend) => (
-                    <div key={trend.axis} className="flex items-start gap-2 text-sm md:text-base">
-                      <ChevronRight className="w-4 h-4 mt-1 text-emerald-400" />
-                      <p>
-                        <span className="font-semibold">{trend.axis}</span>は
-                        <span className="text-emerald-300 font-semibold"> {trend.dominant}</span>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-text-secondary">バランス型の傾向です。状況に応じて使い分けられるタイプです。</p>
-              )}
-
-              {!completed && (
+              <div className="flex items-center justify-between pt-12">
                 <button
-                  onClick={handleResume}
-                  className="mt-4 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 text-white font-semibold"
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className="btn-secondary px-8 text-xs uppercase tracking-widest disabled:opacity-0"
                 >
-                  続きから再開する
+                  Back
                 </button>
-              )}
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {insights.map((item) => {
-                const axisQuestion = thisOrThatQuestions.find((q) => q.axis === item.axis);
-                if (!axisQuestion) return null;
+                <div className="flex gap-4">
+                  {history.length >= 3 && (
+                    <button
+                      onClick={handleFinishNow}
+                      className="text-[10px] uppercase tracking-widest text-white/20 hover:text-white/50 transition-colors font-bold"
+                    >
+                      View Current Insights
+                    </button>
+                  )}
+                  <button
+                    onClick={handleNext}
+                    disabled={!selected || currentIndex === totalQuestions - 1}
+                    className="btn-primary px-12 text-xs uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <span>Next</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  {completed && !isFinished && (
+                    <button
+                      onClick={handleFinishNow}
+                      className="btn-primary px-12 text-xs uppercase tracking-widest"
+                    >
+                      Complete Selection
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="result"
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              variants={fadeIn}
+              className="space-y-16"
+            >
+              <div className="text-center">
+                <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-white/20 mb-4 block">Psychometric Profile</span>
+                <h1 className="text-5xl md:text-7xl font-bold tracking-tighter">Vibration Profile</h1>
+              </div>
 
-                return (
-                  <div key={item.axis} className="bg-card border border-border rounded-2xl p-5">
-                    <p className="text-sm text-text-secondary mb-1">{item.axis}</p>
-                    <p className="font-semibold mb-3">{item.dominant}</p>
+              {/* 主要な傾向 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="glass-card p-10 bg-white/[0.03]">
+                  <div className="flex items-center gap-4 mb-8">
+                    <Target className="w-5 h-5 text-white/30" />
+                    <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">Core Tendencies</h3>
+                  </div>
+                  <div className="space-y-8">
+                    {strongTrends.length > 0 ? (
+                      strongTrends.map((trend) => (
+                        <div key={trend.axis} className="space-y-2">
+                          <p className="text-[10px] uppercase tracking-widest text-white/20 font-bold">{trend.axis}</p>
+                          <p className="text-2xl font-semibold tracking-tight">{trend.dominant}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-lg font-light text-white/40 leading-relaxed italic">
+                        You exhibit a balanced equilibrium across most dimensions, showing high adaptability to different social contexts.
+                      </p>
+                    )}
+                  </div>
+                </div>
 
-                    <div className="mb-2 flex justify-between text-xs text-text-secondary">
-                      <span>{axisQuestion.thisTendency}</span>
-                      <span>{axisQuestion.thatTendency}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-background overflow-hidden mb-2">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-400 to-sky-400"
-                        style={{ width: `${item.thisRate}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>{item.thisRate}%</span>
-                      <span>{item.thatRate}%</span>
+                <div className="space-y-8">
+                  <div className="glass-card p-8">
+                    <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/20 mb-8">Detailed Spectrum</h3>
+                    <div className="space-y-10">
+                      {insights.map((item) => (
+                        <div key={item.axis} className="space-y-4">
+                          <div className="flex justify-between items-end">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">{item.axis}</span>
+                            <span className="text-xl font-bold tracking-tighter">{Math.max(item.thisRate, item.thatRate)}%</span>
+                          </div>
+                          <div className="h-1 glass rounded-full overflow-hidden relative">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${item.thisRate}%` }}
+                              transition={{ duration: 1.5, ease: "easeOut" }}
+                              className="h-full bg-white absolute left-0"
+                            />
+                            <div className="w-[1px] h-full bg-white/10 absolute left-1/2" />
+                          </div>
+                          <div className="flex justify-between text-[9px] uppercase tracking-widest text-white/40 font-bold">
+                            <span className={item.thisRate >= 50 ? "text-white/80" : ""}>{thisOrThatQuestions.find(q => q.axis === item.axis)?.thisTendency}</span>
+                            <span className={item.thatRate >= 50 ? "text-white/80" : ""}>{thisOrThatQuestions.find(q => q.axis === item.axis)?.thatTendency}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                </div>
+              </div>
 
-        {history.length > 0 && (
-          <button
-            onClick={handleReset}
-            className="mt-6 flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span className="text-sm">最初から診断する</span>
-          </button>
-        )}
+              <div className="flex flex-col sm:flex-row gap-6">
+                {!completed && (
+                  <button
+                    onClick={handleResume}
+                    className="btn-primary flex-1 py-8 text-xs uppercase tracking-widest"
+                  >
+                    Resume Exploration
+                  </button>
+                )}
+                <button
+                  onClick={handleReset}
+                  className="btn-secondary flex-1 py-8 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset Data Stream</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );

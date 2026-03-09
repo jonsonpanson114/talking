@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Heart, Search, ChevronRight } from "lucide-react";
+import { Home, Heart, Search, ChevronRight, Sparkles, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { questions, categories, presets } from "@/lib/data/questions";
 import { useLocalStorage } from "@/hooks";
-import { Question } from "@/lib/types";
 import Link from "next/link";
 
 export default function SituationsPage() {
@@ -14,21 +14,17 @@ export default function SituationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
 
-  // フィルタリング
   const filteredQuestions = (() => {
     let result = questions;
 
-    // カテゴリフィルター
     if (selectedCategory !== "all") {
       result = result.filter((q) => q.category === selectedCategory);
     }
 
-    // プリセットフィルター
     if (selectedPreset) {
       result = presets[selectedPreset as keyof typeof presets] || [];
     }
 
-    // 検索フィルター
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -45,194 +41,248 @@ export default function SituationsPage() {
     toggleFavorite(questionId);
   };
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+  };
+
   return (
-    <div className="min-h-screen flex flex-col p-4">
-      {/* ヘッダー */}
-      <header className="mb-6">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <Home className="w-5 h-5" />
-          <span className="text-sm">トップ</span>
-        </Link>
+    <div className="relative min-h-screen">
+      <div className="mesh-gradient" />
+      
+      <header className="relative pt-12 pb-8 px-6">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <Link
+            href="/"
+            className="group flex items-center gap-2 text-white/30 hover:text-white transition-colors duration-300"
+          >
+            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-xs font-medium uppercase tracking-widest">Back to Studio</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-white/20" />
+            <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/20">
+              Situational Insights
+            </span>
+          </div>
+        </div>
       </header>
 
-      <main className="flex-1 max-w-2xl mx-auto">
-        {/* 検索エリア */}
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="質問を検索..."
-            className="w-full pl-12 pr-4 py-3 rounded-xl bg-card border border-border text-text-primary placeholder:text-text-secondary focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none transition-all"
-          />
-        </div>
+      <main className="relative px-6 pb-24 max-w-3xl mx-auto space-y-12">
+        <div className="space-y-8">
+          {/* 検索エリア */}
+          <div className="relative group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-white/60 transition-colors" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="質問やタグで検索..."
+              className="input-elegant w-full pl-14 pt-4"
+            />
+          </div>
 
-        {/* カテゴリタブ */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setSelectedCategory(cat.id);
-                setSelectedPreset(null);
-              }}
-              className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-                selectedCategory === cat.id
-                  ? "bg-accent text-white"
-                  : "bg-card text-text-secondary hover:bg-card-hover"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* プリセット */}
-        <div className="mb-6">
-          <h3 className="text-sm text-text-secondary mb-3">プリセット</h3>
-          <div className="flex flex-wrap gap-2">
-            {Object.keys(presets).map((presetName) => (
+          {/* カテゴリ選択 */}
+          <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide no-scrollbar">
+            {categories.map((cat) => (
               <button
-                key={presetName}
+                key={cat.id}
                 onClick={() => {
-                  setSelectedPreset(presetName);
-                  setSelectedCategory("all");
+                  setSelectedCategory(cat.id);
+                  setSelectedPreset(null);
                 }}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
-                  selectedPreset === presetName
-                    ? "bg-purple-500 text-white"
-                    : "bg-card text-text-secondary hover:bg-card-hover border border-border"
+                className={`px-6 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold transition-all duration-300 whitespace-nowrap ${
+                  selectedCategory === cat.id && !selectedPreset
+                    ? "bg-white text-black"
+                    : "glass text-white/30 hover:text-white/60"
                 }`}
               >
-                {presetName}
+                {cat.label}
               </button>
             ))}
+          </div>
+
+          {/* プリセット */}
+          <div className="space-y-4">
+            <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Recommended Presets</label>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(presets).map((presetName) => (
+                <button
+                  key={presetName}
+                  onClick={() => {
+                    setSelectedPreset(presetName);
+                    setSelectedCategory("all");
+                  }}
+                  className={`px-5 py-2.5 rounded-xl text-[10px] font-semibold transition-all duration-300 ${
+                    selectedPreset === presetName
+                      ? "bg-white/10 text-white ring-1 ring-white/20"
+                      : "glass text-white/30 hover:text-white/60"
+                  }`}
+                >
+                  {presetName}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* 質問リスト */}
-        <div className="space-y-3">
-          {filteredQuestions.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-text-secondary">質問が見つかりません</p>
-            </div>
-          ) : (
-            filteredQuestions.map((question) => (
-              <div
-                key={question.id}
-                className="bg-card border border-border rounded-xl overflow-hidden hover:bg-card-hover transition-all"
-              >
-                {/* ヘッダー */}
-                <button
-                  onClick={() =>
-                    setExpandedQuestion(
-                      expandedQuestion === question.id ? null : question.id
-                    )
-                  }
-                  className="w-full p-4 flex items-start gap-3 text-left"
-                >
-                  <div className="flex-1">
-                    <p className="text-lg font-semibold mb-2">
-                      {question.text}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-2 py-1 rounded-full bg-accent/20 text-accent text-xs">
-                        {categories.find((c) => c.id === question.category)?.label}
-                      </span>
-                      {question.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 rounded-full bg-card-hover text-text-secondary text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <ChevronRight
-                    className={`flex-shrink-0 w-5 h-5 text-text-secondary transition-transform ${
-                      expandedQuestion === question.id ? "rotate-90" : ""
+        <div className="space-y-4">
+          <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Questions Discovery</label>
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-3"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredQuestions.length === 0 ? (
+                <motion.div key="empty" variants={item} className="glass-card p-12 text-center">
+                  <p className="text-white/20 font-light italic">No questions found matching your criteria.</p>
+                </motion.div>
+              ) : (
+                filteredQuestions.map((question) => (
+                  <motion.div
+                    key={question.id}
+                    variants={item}
+                    layout
+                    className={`glass-card overflow-hidden transition-all duration-500 ${
+                      expandedQuestion === question.id ? "bg-white/[0.05] ring-1 ring-white/10" : ""
                     }`}
-                  />
-                </button>
-
-                {/* 展開コンテンツ */}
-                {expandedQuestion === question.id && (
-                  <div className="p-4 border-t border-border">
-                    {question.tips && (
-                      <div className="mb-4">
-                        <p className="text-sm text-text-secondary mb-2">ヒント:</p>
-                        <p className="text-text-primary text-sm leading-relaxed">
-                          {question.tips}
+                  >
+                    <button
+                      onClick={() =>
+                        setExpandedQuestion(
+                          expandedQuestion === question.id ? null : question.id
+                        )
+                      }
+                      className="w-full p-6 flex items-start gap-4 text-left"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex gap-2 mb-3">
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-white/40 font-bold tracking-wider uppercase">
+                            {categories.find((c) => c.id === question.category)?.label}
+                          </span>
+                        </div>
+                        <p className="text-lg font-semibold leading-relaxed tracking-tight">
+                          {question.text}
                         </p>
                       </div>
-                    )}
-
-                    {/* お気に入りボタン */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite(question.id);
-                      }}
-                      className="flex items-center gap-2 text-text-secondary hover:text-accent transition-colors"
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${
-                          isFavorite(question.id) ? "fill-red-500 text-red-500" : ""
+                      <ChevronRight
+                        className={`flex-shrink-0 w-5 h-5 text-white/10 mt-1 transition-transform duration-500 ${
+                          expandedQuestion === question.id ? "rotate-90 text-white/40" : ""
                         }`}
                       />
-                      <span className="text-sm">
-                        {isFavorite(question.id) ? "お気に入り済み" : "お気に入りに追加"}
-                      </span>
                     </button>
 
-                    {/* 保存済みの回答があれば表示 */}
-                    {progress.answeredQuestions[question.id] && (
-                      <div className="mt-4 p-3 rounded-xl bg-accent/10 border border-accent/30">
-                        <p className="text-sm text-text-secondary mb-1">前回の回答:</p>
-                        <p className="text-text-primary">
-                          {progress.answeredQuestions[question.id]}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
+                    <AnimatePresence>
+                      {expandedQuestion === question.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="px-6 pb-6"
+                        >
+                          <div className="pt-4 border-t border-white/5 space-y-6">
+                            {question.tips && (
+                              <div>
+                                <p className="text-[9px] uppercase tracking-widest font-bold text-white/20 mb-2">Inspiration</p>
+                                <p className="text-sm text-white/50 font-light leading-relaxed">
+                                  {question.tips}
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex flex-wrap gap-2">
+                                {question.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-[9px] font-bold text-white/20"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleFavorite(question.id);
+                                }}
+                                className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
+                                  isFavorite(question.id) ? "text-white" : "text-white/20 hover:text-white/40"
+                                }`}
+                              >
+                                <Heart
+                                  className={`w-3.5 h-3.5 ${
+                                    isFavorite(question.id) ? "fill-current" : ""
+                                  }`}
+                                />
+                                <span>{isFavorite(question.id) ? "Collected" : "Collect"}</span>
+                              </button>
+                            </div>
+
+                            {progress.answeredQuestions[question.id] && (
+                              <div className="p-4 rounded-xl glass border-white/5 bg-black/20">
+                                <p className="text-[9px] uppercase tracking-wider text-white/30 mb-2 font-bold">Past Reflection</p>
+                                <p className="text-sm text-white/60 font-light italic">
+                                  {progress.answeredQuestions[question.id]}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
 
-        {/* お気に入り一覧 */}
+        {/* お気に入り概要 */}
         {progress.favorites.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-              お気に入り
-            </h3>
-            <div className="space-y-3">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-12">
+            <div className="flex items-center gap-3 mb-8">
+              <Heart className="w-4 h-4 text-white/40 fill-white/10" />
+              <h2 className="text-xs uppercase tracking-[0.2em] font-bold text-white/40">Your Collection</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {questions
                 .filter((q) => progress.favorites.includes(q.id))
+                .slice(0, 4)
                 .map((question) => (
                   <div
                     key={question.id}
-                    className="bg-card border border-border rounded-xl p-4"
+                    className="glass-card p-6 flex flex-col justify-between"
                   >
-                    <p className="font-semibold mb-2">{question.text}</p>
+                    <p className="text-sm font-medium mb-6 line-clamp-2 leading-relaxed">{question.text}</p>
                     <button
                       onClick={() => handleToggleFavorite(question.id)}
-                      className="flex items-center gap-2 text-red-500 hover:text-red-400 transition-colors"
+                      className="text-[9px] uppercase tracking-widest font-bold text-white/10 hover:text-white/40 transition-colors self-start"
                     >
-                      <Heart className="w-4 h-4 fill-red-500" />
-                      <span className="text-sm">削除</span>
+                      Remove
                     </button>
                   </div>
                 ))}
             </div>
-          </div>
+            {progress.favorites.length > 4 && (
+              <p className="mt-6 text-[10px] text-white/20 text-center uppercase tracking-widest">
+                and {progress.favorites.length - 4} more in your collection
+              </p>
+            )}
+          </motion.div>
         )}
       </main>
     </div>
