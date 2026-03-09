@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Shuffle, Heart, Lightbulb, Home, ArrowUpRight, ChevronLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shuffle, Heart, Lightbulb, Home, ArrowUpRight, ChevronLeft, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { questions, categories } from "@/lib/data/questions";
 import { useLocalStorage } from "@/hooks";
@@ -74,126 +74,203 @@ export default function CardsPage() {
         </div>
       </header>
 
-      <main className="relative px-6 pb-16 max-w-2xl mx-auto flex flex-col">
-        {/* カテゴリ選択 */}
-        <div className="flex gap-2 overflow-x-auto pb-6 scrollbar-hide no-scrollbar">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setSelectedCategory(cat.id);
-                setCurrentIndex(0);
-              }}
-              className={`px-6 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold transition-all duration-300 whitespace-nowrap ${
-                selectedCategory === cat.id
-                  ? "bg-white text-black"
-                  : "glass text-white/30 hover:text-white/60"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+      <main className="relative px-6 pb-16 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-12 items-start">
+          {/* Main Column */}
+          <div className="flex flex-col space-y-8">
+            {/* カテゴリ選択 */}
+            <div className="flex gap-2 overflow-x-auto pb-6 scrollbar-hide no-scrollbar">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setSelectedCategory(cat.id);
+                    setCurrentIndex(0);
+                  }}
+                  className={`px-6 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold transition-all duration-300 whitespace-nowrap ${
+                    selectedCategory === cat.id
+                      ? "bg-white text-black"
+                      : "glass text-white/30 hover:text-white/60"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
 
-        <div className="flex-1 flex flex-col justify-center items-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentQuestion.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full glass-card p-8 md:p-10 flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-8">
-                  <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/20">
-                    Question {currentIndex + 1} / {totalQuestions}
-                  </span>
-                  <button
-                    onClick={() => toggleFavorite(currentQuestion.id)}
-                    className={`transition-all duration-300 ${isFavorite(currentQuestion.id) ? "text-white scale-125" : "text-white/10 hover:text-white/30"}`}
-                  >
-                    <Heart className={`w-5 h-5 ${isFavorite(currentQuestion.id) ? "fill-current" : ""}`} />
-                  </button>
-                </div>
-
-                <h2 className="text-2xl md:text-3xl font-bold mb-8 leading-[1.3] tracking-tight">
-                  {currentQuestion.text}
-                </h2>
-
-                {currentQuestion.tips && (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => setShowTips(!showTips)}
-                      className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white/60 transition-colors"
-                    >
-                      <Lightbulb className="w-3.5 h-3.5" />
-                      <span>{showTips ? "Close Inspiration" : "Seek Inspiration"}</span>
-                    </button>
-                    {showTips && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="glass p-6 rounded-2xl border-white/5"
+            <div className="flex-1 flex flex-col items-center">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentQuestion.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full glass-card p-8 md:p-10 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-8">
+                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/20">
+                        Question {currentIndex + 1} / {totalQuestions}
+                      </span>
+                      <button
+                        onClick={() => toggleFavorite(currentQuestion.id)}
+                        className={`transition-all duration-300 ${isFavorite(currentQuestion.id) ? "text-white scale-125" : "text-white/10 hover:text-white/30"}`}
                       >
-                        <p className="text-sm text-white/40 font-light leading-relaxed">
-                          {currentQuestion.tips}
-                        </p>
-                      </motion.div>
+                        <Heart className={`w-5 h-5 ${isFavorite(currentQuestion.id) ? "fill-current" : ""}`} />
+                      </button>
+                    </div>
+
+                    <h2 className="text-2xl md:text-3xl font-bold mb-8 leading-[1.3] tracking-tight">
+                      {currentQuestion.text}
+                    </h2>
+
+                    {currentQuestion.tips && (
+                      <div className="space-y-4">
+                        <button
+                          onClick={() => setShowTips(!showTips)}
+                          className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white/60 transition-colors"
+                        >
+                          <Lightbulb className="w-3.5 h-3.5" />
+                          <span>{showTips ? "Close Inspiration" : "Seek Inspiration"}</span>
+                        </button>
+                        {showTips && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="glass p-6 rounded-2xl border-white/5"
+                          >
+                            <p className="text-sm text-white/40 font-light leading-relaxed">
+                              {currentQuestion.tips}
+                            </p>
+                          </motion.div>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              <div className="mt-8 space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Internal Dialogue</label>
-                  <textarea
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    placeholder="自分の考えや返答をメモ..."
-                    className="input-elegant w-full min-h-[100px] resize-none pt-4"
-                  />
-                </div>
-                
-                {progress.answeredQuestions[currentQuestion.id] && !userAnswer && (
-                  <div className="glass p-4 rounded-xl border-white/5 opacity-40">
-                    <p className="text-[9px] uppercase tracking-wider text-white/40 mb-1">Previous Note</p>
-                    <p className="text-xs font-light">{progress.answeredQuestions[currentQuestion.id]}</p>
+                  <div className="mt-8 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Internal Dialogue</label>
+                      <textarea
+                        value={userAnswer}
+                        onChange={(e) => setUserAnswer(e.target.value)}
+                        placeholder="自分の考えや返答をメモ..."
+                        className="input-elegant w-full min-h-[100px] resize-none pt-4"
+                      />
+                    </div>
+                    
+                    {progress.answeredQuestions[currentQuestion.id] && !userAnswer && (
+                      <div className="glass p-4 rounded-xl border-white/5 opacity-40">
+                        <p className="text-[9px] uppercase tracking-wider text-white/40 mb-1">Previous Note</p>
+                        <p className="text-xs font-light">{progress.answeredQuestions[currentQuestion.id]}</p>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleSaveAnswer}
+                      disabled={!userAnswer.trim()}
+                      className="btn-primary w-full disabled:opacity-20 flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
+                    >
+                      Save Reflection
+                      <ArrowUpRight className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
+                </motion.div>
+              </AnimatePresence>
 
+              <div className="mt-8 flex gap-4 w-full">
                 <button
-                  onClick={handleSaveAnswer}
-                  disabled={!userAnswer.trim()}
-                  className="btn-primary w-full disabled:opacity-20 flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
+                  onClick={handlePrevious}
+                  disabled={currentIndex === 0}
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2 disabled:opacity-10"
                 >
-                  Save Reflection
-                  <ArrowUpRight className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="text-xs uppercase tracking-widest">Previous</span>
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={currentIndex === totalQuestions - 1}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-10"
+                >
+                  <span className="text-xs uppercase tracking-widest">Next</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            </motion.div>
-          </AnimatePresence>
-
-          <div className="mt-8 flex gap-4 w-full">
-            <button
-              onClick={handlePrevious}
-              disabled={currentIndex === 0}
-              className="btn-secondary flex-1 flex items-center justify-center gap-2 disabled:opacity-10"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-xs uppercase tracking-widest">Previous</span>
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={currentIndex === totalQuestions - 1}
-              className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-10"
-            >
-              <span className="text-xs uppercase tracking-widest">Next</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            </div>
           </div>
+
+          {/* Sidebar */}
+          <aside className="space-y-8 sticky top-8">
+            {/* Conversation Tips */}
+            <section className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-white/5">
+                  <Lightbulb className="w-4 h-4 text-white/60" />
+                </div>
+                <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Conversation Tips</h3>
+              </div>
+              <ul className="space-y-4">
+                {[
+                  { title: "感情にフォーカス", content: "『何をしたか』より『どう感じたか』を聞くのがコツです。" },
+                  { title: "オウム返しの術", content: "相手が言った重要なキーワードを繰り返すだけで共感が伝わります。" },
+                  { title: "具体化の質問", content: "『具体的には？』と一歩踏み込むと、話が深まります。" },
+                ].map((tip, i) => (
+                  <li key={i} className="space-y-1">
+                    <p className="text-[11px] font-bold text-white/60">{tip.title}</p>
+                    <p className="text-[11px] text-white/30 font-light leading-relaxed">{tip.content}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Progress Stats */}
+            <section className="glass-card p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-white/5">
+                  <Sparkles className="w-4 h-4 text-white/60" />
+                </div>
+                <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Your Progress</h3>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest mb-2 px-1">
+                    <span className="text-white/20">Answered Questions</span>
+                    <span className="text-white/60">{Object.keys(progress.answeredQuestions).length} / {questions.length}</span>
+                  </div>
+                  <div className="h-1 glass rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(Object.keys(progress.answeredQuestions).length / questions.length) * 100}%` }}
+                      className="h-full bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Favorite Snapshot */}
+            {progress.favorites.length > 0 && (
+              <section className="glass-card p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-lg bg-white/5">
+                    <Heart className="w-4 h-4 text-white/60" />
+                  </div>
+                  <h3 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Recent Favorites</h3>
+                </div>
+                <div className="space-y-3">
+                  {questions
+                    .filter(q => progress.favorites.includes(q.id))
+                    .slice(0, 3)
+                    .map(q => (
+                      <div key={q.id} className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                        <p className="text-[10px] text-white/40 font-light line-clamp-2 leading-relaxed">{q.text}</p>
+                      </div>
+                    ))}
+                </div>
+              </section>
+            )}
+          </aside>
         </div>
       </main>
     </div>
