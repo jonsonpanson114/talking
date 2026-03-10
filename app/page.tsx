@@ -61,17 +61,17 @@ export default function HomePage() {
       <div className="mesh-gradient" />
       
       {/* ヒーローセクション */}
-      <header className="relative pt-16 pb-12 px-6">
+      <header className="relative pt-4 sm:pt-16 pb-4 sm:pb-12 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-white/5 mb-8"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border-white/5 mb-4 sm:mb-8"
           >
-            <Sparkles className="w-4 h-4 text-white/60" />
-            <span className="text-[10px] uppercase tracking-[0.2em] font-medium text-white/40">
-              Master the Art of Conversation
+            <Sparkles className="w-3.5 h-3.5 text-white/60" />
+            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium text-white/40">
+              The Art of Conversation
             </span>
           </motion.div>
           
@@ -79,7 +79,7 @@ export default function HomePage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl md:text-8xl font-bold mb-6 tracking-tighter"
+            className="text-4xl sm:text-8xl font-bold mb-3 sm:mb-6 tracking-tighter"
           >
             Talking
           </motion.h1>
@@ -88,44 +88,43 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 1 }}
-            className="text-lg md:text-xl text-white/40 max-w-2xl mx-auto font-light leading-relaxed"
+            className="text-sm sm:text-xl text-white/40 max-w-2xl mx-auto font-light leading-relaxed px-4"
           >
-            日常の、何気ない「一言」を最高のエッセンスに。<br className="hidden md:block" />
-            AIが導く、新しい会話の体験をあなたに。
+            AIが導く、新しい会話の体験を。
           </motion.p>
         </div>
       </header>
 
       {/* メイングリッド */}
-      <main className="px-6 pb-16">
+      <main className="px-4 sm:px-6 pb-8 sm:pb-16">
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
           className="max-w-5xl mx-auto"
         >
-          <div className="bento-grid gap-4 sm:gap-6">
+          <div className="bento-grid gap-3 sm:gap-6">
             {features.map((feature) => (
               <motion.div key={feature.id} variants={item} className={feature.size === "large" ? "bento-item-large" : ""}>
                 <Link
                   href={feature.href}
-                  className="group glass-card h-full flex flex-col justify-between"
+                  className="group glass-card h-full flex flex-col justify-between p-5 sm:p-8"
                 >
-                  <div>
-                    <div className="w-12 h-12 rounded-2xl glass border-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500">
+                  <div className="flex flex-col h-full">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl glass border-white/10 flex items-center justify-center mb-4 sm:mb-8 group-hover:scale-110 transition-transform duration-500">
                       {feature.icon}
                     </div>
-                    <h2 className="text-2xl font-semibold mb-3 tracking-tight group-hover:translate-x-1 transition-transform duration-500">
+                    <h2 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 tracking-tight group-hover:translate-x-1 transition-transform duration-500">
                       {feature.title}
                     </h2>
-                    <p className="text-sm text-white/30 leading-relaxed font-light">
+                    <p className="text-xs sm:text-sm text-white/30 leading-relaxed font-light line-clamp-2">
                       {feature.description}
                     </p>
                   </div>
 
-                  <div className="mt-12 flex justify-end">
-                    <div className="w-10 h-10 rounded-full glass border-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-                      <ArrowRight className="w-4 h-4" />
+                  <div className="mt-4 sm:mt-12 flex justify-end">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full glass border-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
                   </div>
                 </Link>
@@ -134,25 +133,25 @@ export default function HomePage() {
           </div>
 
           {/* クイック統計 / ヒント */}
-          <motion.div variants={item} className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div className="glass-card flex items-start gap-4 p-8">
-              <div className="p-3 rounded-xl bg-white/5">
-                <Lightbulb className="w-5 h-5 text-white/60" />
+          <motion.div variants={item} className="mt-4 sm:mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+            <div className="glass-card flex items-start gap-3 sm:gap-4 p-5 sm:p-8">
+              <div className="p-2 sm:p-3 rounded-xl bg-white/5">
+                <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
               </div>
               <div>
-                <h3 className="text-sm font-medium mb-2 text-white/80">会話のコツ</h3>
-                <p className="text-sm text-white/30 font-light leading-relaxed">
+                <h3 className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 text-white/80">会話のコツ</h3>
+                <p className="text-[11px] sm:text-sm text-white/30 font-light leading-relaxed">
                   相手が話した内容の「感情」にフォーカスして詳しく聞くと、自然に会話が深まります。
                 </p>
               </div>
             </div>
-            <div className="glass-card flex items-start gap-4 p-8">
-              <div className="p-3 rounded-xl bg-white/5">
-                <TrendingUp className="w-5 h-5 text-white/60" />
+            <div className="glass-card flex items-start gap-3 sm:gap-4 p-5 sm:p-8">
+              <div className="p-2 sm:p-3 rounded-xl bg-white/5">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
               </div>
               <div>
-                <h3 className="text-sm font-medium mb-2 text-white/80">練習の成果</h3>
-                <p className="text-sm text-white/30 font-light leading-relaxed">
+                <h3 className="text-xs sm:text-sm font-medium mb-1 sm:mb-2 text-white/80">練習の成果</h3>
+                <p className="text-[11px] sm:text-sm text-white/30 font-light leading-relaxed">
                   ロールプレイを1日5分続けるだけで、初対面での緊張レベルが平均30%軽減されることがわかっています。
                 </p>
               </div>
@@ -162,9 +161,9 @@ export default function HomePage() {
       </main>
 
       {/* フッター */}
-      <footer className="py-6 px-4 border-t border-white/[0.04]">
+      <footer className="py-4 sm:py-6 px-4 border-t border-white/[0.04]">
         <div className="max-w-lg mx-auto text-center">
-          <p className="text-text-muted text-xs">
+          <p className="text-white/20 text-[10px] sm:text-xs">
             © 2025 Talking
           </p>
         </div>
