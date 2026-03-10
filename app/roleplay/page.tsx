@@ -173,7 +173,7 @@ export default function RoleplayPage() {
   };
 
   const fadeIn = {
-      <header className="relative pt-4 sm:pt-8 pb-3 sm:pb-4 px-6">
+      <header className="relative pt-2 sm:pt-8 pb-1 sm:pb-4 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -183,7 +183,7 @@ export default function RoleplayPage() {
             <span className="text-[10px] font-medium uppercase tracking-widest">Studio</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Bot className="w-3.5 h-3.5 text-white/20" />
+            <Bot className="w-3 h-3 text-white/20" />
             <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium text-white/20">
               Session
             </span>
@@ -191,63 +191,63 @@ export default function RoleplayPage() {
         </div>
       </header>
 
-      <main className="relative px-4 sm:px-6 pb-12 sm:pb-24 max-w-3xl mx-auto">
+      <main className="relative px-4 sm:px-6 pb-4 sm:pb-24 max-w-3xl mx-auto">
         <AnimatePresence mode="wait">
           {step === "settings" && (
             <motion.div
               key="settings"
               initial="hidden"
               animate="visible"
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, y: -5 }}
               variants={fadeIn}
-              className="space-y-6 sm:space-y-8"
+              className="space-y-4 sm:space-y-8"
             >
               <div>
-                <h1 className="text-2xl sm:text-4xl font-bold mb-1 sm:mb-2 tracking-tight">Roleplay Session</h1>
-                <p className="text-xs sm:text-base text-white/30 font-light">会話のシチュエーションと相手のタイプを設定します。</p>
+                <h1 className="text-xl sm:text-4xl font-bold mb-0.5 sm:mb-2 tracking-tight">Roleplay</h1>
+                <p className="text-[10px] sm:text-base text-white/20 font-light italic">Vibe check before session.</p>
               </div>
 
               {/* 名前入力 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-2 sm:space-y-3">
-                  <label className="text-[9px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Your Identity</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
+                <div className="space-y-1.5 sm:space-y-3">
+                  <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10 ml-2">You</label>
                   <input
                     type="text"
                     value={settings.userName}
                     onChange={(e) => setSettings({ ...settings, userName: e.target.value })}
-                    placeholder="自分の名前"
-                    className="input-elegant w-full py-2.5 sm:py-3 text-sm"
+                    placeholder="Your name"
+                    className="input-elegant w-full py-2 sm:py-3 text-xs"
                   />
                 </div>
-                <div className="space-y-2 sm:space-y-3">
-                  <label className="text-[9px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Partner Persona</label>
+                <div className="space-y-1.5 sm:space-y-3">
+                  <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10 ml-2">Target</label>
                   <input
                     type="text"
                     value={settings.partnerName}
                     onChange={(e) => setSettings({ ...settings, partnerName: e.target.value })}
-                    placeholder="相手の名前"
-                    className="input-elegant w-full py-2.5 sm:py-3 text-sm"
+                    placeholder="Partner name"
+                    className="input-elegant w-full py-2 sm:py-3 text-xs"
                   />
                 </div>
               </div>
 
               {/* シチュエーション */}
-              <div className="space-y-2 sm:space-y-3">
-                <label className="text-[9px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/20 ml-2">Scenario</label>
+              <div className="space-y-1.5 sm:space-y-3">
+                <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10 ml-2">Scenario</label>
                 <div className="grid grid-cols-1 gap-2 sm:gap-3">
                   {roleplayScenarios.map((scenario) => (
                     <button
                       key={scenario.id}
                       onClick={() => setSettings({ ...settings, scenarioId: scenario.id })}
-                      className={`glass-card text-left p-4 sm:p-5 group transition-all duration-500 ${
-                        settings.scenarioId === scenario.id ? "bg-white/[0.08] ring-1 ring-white/20" : "opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+                      className={`glass-card text-left p-3 sm:p-5 group transition-all duration-500 ${
+                        settings.scenarioId === scenario.id ? "bg-white/[0.08] ring-1 ring-white/10 shadow-none" : "opacity-40 grayscale hover:grayscale-0 hover:opacity-100 border-transparent shadow-none"
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-1 sm:mb-2">
-                        <h3 className="text-base sm:text-lg font-semibold">{scenario.label}</h3>
-                        <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 mt-1.5 ${settings.scenarioId === scenario.id ? "bg-white" : "bg-white/10"}`} />
+                      <div className="flex justify-between items-start mb-0.5 sm:mb-2">
+                        <h3 className="text-sm sm:text-lg font-semibold">{scenario.label}</h3>
+                        <div className={`w-1 h-1 rounded-full transition-all duration-500 mt-1.5 ${settings.scenarioId === scenario.id ? "bg-white" : "bg-white/10"}`} />
                       </div>
-                      <p className="text-xs sm:text-sm text-white/40 font-light leading-relaxed line-clamp-2 sm:line-clamp-none">{scenario.context}</p>
+                      <p className="text-[10px] sm:text-sm text-white/20 font-light leading-snug line-clamp-1 sm:line-clamp-none">{scenario.context}</p>
                     </button>
                   ))}
                 </div>

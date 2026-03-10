@@ -61,25 +61,25 @@ export default function HomePage() {
       <div className="mesh-gradient" />
       
       {/* ヒーローセクション */}
-      <header className="relative pt-4 sm:pt-16 pb-4 sm:pb-12 px-6">
+      <header className="relative pt-2 sm:pt-16 pb-2 sm:pb-12 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border-white/5 mb-4 sm:mb-8"
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full glass border-white/5 mb-1 sm:mb-8"
           >
-            <Sparkles className="w-3.5 h-3.5 text-white/60" />
-            <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-medium text-white/40">
+            <Sparkles className="w-3 h-3 text-white/60" />
+            <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.2em] font-medium text-white/40">
               The Art of Conversation
             </span>
           </motion.div>
           
           <motion.h1
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-4xl sm:text-8xl font-bold mb-3 sm:mb-6 tracking-tighter"
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-3xl sm:text-8xl font-bold mb-1 sm:mb-6 tracking-tighter"
           >
             Talking
           </motion.h1>
@@ -87,16 +87,16 @@ export default function HomePage() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 1 }}
-            className="text-sm sm:text-xl text-white/40 max-w-2xl mx-auto font-light leading-relaxed px-4"
+            transition={{ delay: 0.2, duration: 0.8 }}
+            className="text-[11px] sm:text-xl text-white/30 max-w-2xl mx-auto font-light leading-snug px-4"
           >
-            AIが導く、新しい会話の体験を。
+            AIが導く、新しい会話の体験。
           </motion.p>
         </div>
       </header>
 
       {/* メイングリッド */}
-      <main className="px-4 sm:px-6 pb-8 sm:pb-16">
+      <main className="px-4 sm:px-6 pb-6 sm:pb-16">
         <motion.div
           variants={container}
           initial="hidden"

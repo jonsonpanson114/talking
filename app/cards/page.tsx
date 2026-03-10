@@ -56,7 +56,7 @@ export default function CardsPage() {
     <div className="relative min-h-screen">
       <div className="mesh-gradient" />
       
-      <header className="relative pt-4 sm:pt-8 pb-3 px-6">
+      <header className="relative pt-2 sm:pt-8 pb-1 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -67,25 +67,25 @@ export default function CardsPage() {
           </Link>
           <button
             onClick={handleShuffle}
-            className="glass p-2.5 rounded-xl text-white/40 hover:text-white transition-all duration-300"
+            className="glass p-2 rounded-xl text-white/40 hover:text-white transition-all duration-300"
           >
-            <Shuffle className="w-3.5 h-3.5" />
+            <Shuffle className="w-3 h-3" />
           </button>
         </div>
       </header>
 
-      <main className="relative px-4 sm:px-6 pb-8 sm:pb-12 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6 lg:gap-12 items-start">
+      <main className="relative px-4 sm:px-6 pb-6 sm:pb-12 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-4 lg:gap-12 items-start">
           {/* Main Column */}
-          <div className="flex flex-col space-y-3 sm:space-y-8">
+          <div className="flex flex-col space-y-2 sm:space-y-8">
             {/* モバイル専用：会話のコツ（カード上部に配置） */}
             <div className="block lg:hidden">
-              <div className="glass-card p-3 sm:p-4 border-white/5">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-3 h-3 text-white/60" />
-                  <h3 className="text-[8px] uppercase tracking-widest font-bold text-white/40">Tip</h3>
+              <div className="glass-card p-2 sm:p-4 border-white/5 bg-white/[0.02]">
+                <div className="flex items-center gap-2 mb-1">
+                  <Lightbulb className="w-2.5 h-2.5 text-white/50" />
+                  <h3 className="text-[7px] uppercase tracking-widest font-bold text-white/30">Tip</h3>
                 </div>
-                <p className="text-[10px] text-white/60 font-medium leading-relaxed">
+                <p className="text-[9px] text-white/50 font-medium leading-tight">
                   {[
                     "『何をしたか』より『どう感じたか』を聞くのがコツです。",
                     "相手が言った言葉を繰り返すだけで共感が伝わります。",
@@ -96,7 +96,7 @@ export default function CardsPage() {
             </div>
 
             {/* カテゴリ選択 */}
-            <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-6 scrollbar-hide no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:pb-6 scrollbar-hide no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
               {categories.map((cat) => (
                 <button
                   key={cat.id}
@@ -104,10 +104,10 @@ export default function CardsPage() {
                     setSelectedCategory(cat.id);
                     setCurrentIndex(0);
                   }}
-                  className={`px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-widest font-bold transition-all duration-300 whitespace-nowrap ${
+                  className={`px-3 py-1 rounded-full text-[8px] sm:text-[10px] uppercase tracking-widest font-bold transition-all duration-300 whitespace-nowrap ${
                     selectedCategory === cat.id
                       ? "bg-white text-black"
-                      : "glass text-white/30 hover:text-white/60 border-transparent"
+                      : "glass text-white/30 hover:text-white/60 border-transparent shadow-none"
                   }`}
                 >
                   {cat.label}
@@ -119,45 +119,45 @@ export default function CardsPage() {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentQuestion.id}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-full glass-card p-5 sm:p-10 flex flex-col justify-between border-white/10"
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full glass-card p-4 sm:p-10 flex flex-col justify-between border-white/10"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-4 sm:mb-8">
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-white/20">
+                    <div className="flex items-center justify-between mb-3 sm:mb-8">
+                      <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-white/10">
                         {currentIndex + 1} / {totalQuestions}
                       </span>
                       <button
                         onClick={() => toggleFavorite(currentQuestion.id)}
                         className={`transition-all duration-300 ${isFavorite(currentQuestion.id) ? "text-white scale-110" : "text-white/10 hover:text-white/30"}`}
                       >
-                        <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isFavorite(currentQuestion.id) ? "fill-current" : ""}`} />
+                        <Heart className={`w-3.5 h-3.5 sm:w-5 sm:h-5 ${isFavorite(currentQuestion.id) ? "fill-current" : ""}`} />
                       </button>
                     </div>
 
-                    <h2 className="text-lg sm:text-3xl font-bold mb-4 sm:mb-8 leading-[1.3] tracking-tight">
+                    <h2 className="text-base sm:text-3xl font-bold mb-3 sm:mb-8 leading-tight tracking-tight">
                       {currentQuestion.text}
                     </h2>
 
                     {currentQuestion.tips && (
-                      <div className="space-y-2 sm:space-y-4">
+                      <div className="space-y-1.5 sm:space-y-4">
                         <button
                           onClick={() => setShowTips(!showTips)}
-                          className="inline-flex items-center gap-2 text-[8px] sm:text-[9px] uppercase tracking-widest font-bold text-white/20 hover:text-white/60 transition-colors"
+                          className="inline-flex items-center gap-2 text-[7px] sm:text-[9px] uppercase tracking-widest font-bold text-white/10 hover:text-white/40 transition-colors"
                         >
-                          <Lightbulb className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
-                          <span>{showTips ? "Hide Inspiration" : "Seek Inspiration"}</span>
+                          <Lightbulb className="w-2 h-2 sm:w-3.5 sm:h-3.5" />
+                          <span>{showTips ? "Hide" : "Seek"}</span>
                         </button>
                         {showTips && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
-                            className="glass p-4 sm:p-6 rounded-2xl border-white/5"
+                            className="glass p-3 sm:p-6 rounded-xl border-white/5"
                           >
-                            <p className="text-[11px] sm:text-sm text-white/40 font-light leading-relaxed">
+                            <p className="text-[10px] sm:text-sm text-white/30 font-light leading-snug">
                               {currentQuestion.tips}
                             </p>
                           </motion.div>
@@ -166,14 +166,13 @@ export default function CardsPage() {
                     )}
                   </div>
 
-                  <div className="mt-5 sm:mt-8 space-y-3 sm:space-y-4">
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <label className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Note</label>
+                  <div className="mt-4 sm:mt-8 space-y-2 sm:space-y-4">
+                    <div className="space-y-1 sm:space-y-2">
                       <textarea
                         value={userAnswer}
                         onChange={(e) => setUserAnswer(e.target.value)}
                         placeholder="考えをメモ..."
-                        className="input-elegant w-full min-h-[60px] sm:min-h-[100px] resize-none pt-3 text-xs sm:text-sm"
+                        className="input-elegant w-full min-h-[50px] sm:min-h-[100px] resize-none pt-2 text-[11px] sm:text-sm px-4"
                       />
                     </div>
                     
