@@ -173,6 +173,14 @@ export default function RoleplayPage() {
   };
 
   const fadeIn = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  return (
+    <div className="relative min-h-screen">
+      <div className="mesh-gradient" />
+      
       <header className="relative pt-2 sm:pt-8 pb-1 sm:pb-4 px-6">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
