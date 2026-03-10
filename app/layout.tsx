@@ -37,6 +37,7 @@ export default function RootLayout({
     <html lang="ja" className="dark">
       <head>
         <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="theme-color" content="#09090b" />
         <meta name="description" content="初対面の人との会話を練習するアプリ" />
         <meta name="keywords" content="会話,練習,初対面,デート,マッチングアプリ,ロールプレイ,質問" />

@@ -1,6 +1,7 @@
 {
   "name": "Talking",
   "short_name": "Talking",
+  "id": "/",
   "description": "初対面の人との会話を練習するアプリ",
   "start_url": "/",
   "display": "standalone",
