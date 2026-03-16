@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI, Content, Part } from "@google/generative-ai";
 import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/lib/types";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || "",
+// Gemini API の初期化
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+// Gemini 3.1 Flash モデルを使用
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash", // 現状の実装規格に従い、最新の Flash モデルを指定
 });
 
 const personaPrompts = {
@@ -81,15 +84,15 @@ ${partnerStyle.promptHint}
 ${question}
 `;
 
-  const message = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022",
-    max_tokens: 500,
-    system: systemPrompt,
-    messages: [{ role: "user", content: "それでは、練習を開始しましょう。最初のメッセージをお願いします。" }],
-  });
-
+  // Gemini では System Instruction を設定または最初のメッセージに含める
+  const result = await model.generateContent([
+    { text: systemPrompt },
+    { text: "それでは、練習を開始しましょう。最初のメッセージをお願いします。" }
+  ]);
+  
+  const response = result.response;
   return NextResponse.json({
-    response: message.content[0].type === "text" ? message.content[0].text : "",
+    response: response.text(),
   });
 }
 
@@ -126,18 +129,23 @@ ${partnerStyle.promptHint}
 5. 次の一手につながる一文を時々入れる（毎回ではない）
 `;
 
-  const message = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022",
-    max_tokens: 500,
-    system: systemPrompt,
-    messages: messages.map((item) => ({
-      role: item.role === "assistant" ? "assistant" : "user",
-      content: item.content,
-    })),
+  // 履歴の変換 (Gemini 形式)
+  const history: Content[] = messages.slice(0, -1).map(msg => ({
+    role: msg.role === "assistant" ? "model" : "user",
+    parts: [{ text: msg.content }],
+  }));
+
+  const chat = model.startChat({
+    history: history,
+    systemInstruction: systemPrompt,
   });
 
+  const lastMessage = messages[messages.length - 1].content;
+  const result = await chat.sendMessage(lastMessage);
+  const response = result.response;
+
   return NextResponse.json({
-    response: message.content[0].type === "text" ? message.content[0].text : "",
+    response: response.text(),
   });
 }
 
@@ -146,7 +154,7 @@ function clampScore(value: unknown, fallback = 60) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function normalizeEvaluation(raw: Record<string, unknown>): ConversationEvaluation {
+function normalizeEvaluation(raw: any): ConversationEvaluation {
   return {
     score: clampScore(raw.score, 65),
     twoWayScore: clampScore(raw.twoWayScore, 60),
@@ -215,7 +223,7 @@ async function handleEvaluateConversation(data: {
 5. nextStepScore: 次につなぐ会話運び
 6. twoWayScore, balanceScore, connectionScore, naturalnessScoreも評価
 
-必ず以下のJSONのみを返してください。
+必ず以下のJSONのみを返してください。マークダウンの囲み（\`\`\`json）は不要です。
 
 {
   "score": 0-100,
@@ -246,17 +254,13 @@ async function handleEvaluateConversation(data: {
 ${messages.map((item, index) => `[${index + 1}ターン目] ${item.role}: ${item.content}`).join("\n")}
 `;
 
-  const message = await anthropic.messages.create({
-    model: "claude-3-5-sonnet-20241022",
-    max_tokens: 2200,
-    system: "JSON以外を出力しないでください。",
-    messages: [{ role: "user", content: prompt }],
-  });
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  const responseText = response.text();
 
   try {
-    const responseText = message.content[0].type === "text" ? message.content[0].text : "";
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const parsed = jsonMatch ? (JSON.parse(jsonMatch[0]) as Record<string, unknown>) : null;
+    const parsed = jsonMatch ? (JSON.parse(jsonMatch[0]) as any) : null;
 
     if (!parsed) {
       throw new Error("Failed to parse evaluation JSON");
