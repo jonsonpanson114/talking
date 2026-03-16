@@ -31,9 +31,13 @@ export async function POST(req: NextRequest) {
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("AI API error:", error);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to process request", 
+      details: error.message,
+      env_check: process.env.ANTHROPIC_API_KEY ? "Set" : "Missing"
+    }, { status: 500 });
   }
 }
 
