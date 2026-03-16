@@ -85,7 +85,7 @@ ${question}
     model: "claude-3-5-sonnet-20241022",
     max_tokens: 500,
     system: systemPrompt,
-    messages: [],
+    messages: [{ role: "user", content: "それでは、練習を開始しましょう。最初のメッセージをお願いします。" }],
   });
 
   return NextResponse.json({
