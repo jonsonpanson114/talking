@@ -4,10 +4,11 @@ import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/lib/types";
 
 // Gemini API の初期化
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+const genAI = new GoogleGenerativeAI(apiKey);
 // Gemini 3.1 Flash モデルを使用
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash", // 現状の実装規格に従い、最新の Flash モデルを指定
+  model: "gemini-1.5-flash", 
 });
 
 const personaPrompts = {
@@ -36,7 +37,11 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("AI API error:", error);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to process request",
+      details: error.message,
+      env_check: process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "Set" : "Missing"
+    }, { status: 500 });
   }
 }
 
