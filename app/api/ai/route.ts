@@ -37,11 +37,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("AI API error:", error);
-    return NextResponse.json({ 
-      error: "Failed to process request",
-      details: error.message,
-      env_check: process.env.GOOGLE_GENERATIVE_AI_API_KEY ? "Set" : "Missing"
-    }, { status: 500 });
+    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
   }
 }
 
