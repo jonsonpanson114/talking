@@ -4,7 +4,7 @@ import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/lib/types";
 
 // Gemini API の初期化
-const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "";
+const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 // Gemini 3.1 Flash モデルを使用
 const model = genAI.getGenerativeModel({ 
