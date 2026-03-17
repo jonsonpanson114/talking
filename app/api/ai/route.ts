@@ -6,9 +6,9 @@ import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/li
 // Gemini API の初期化
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-// Gemini 3.1 Flash モデルを使用
+// Gemini 3 Flash Preview モデルを使用
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-3.1-flash", 
+  model: "gemini-3-flash-preview", 
 });
 
 const personaPrompts = {
