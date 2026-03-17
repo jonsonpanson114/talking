@@ -131,10 +131,18 @@ ${partnerStyle.promptHint}
 `;
 
   // 履歴の変換 (Gemini 形式: user と model のみ)
-  const history: Content[] = messages.slice(0, -1).map(msg => ({
+  // Gemini の制約として、履歴の最初は必ず "user" ロールである必要がある。
+  const rawHistory: Content[] = messages.slice(0, -1).map(msg => ({
     role: msg.role === "assistant" ? "model" : "user",
     parts: [{ text: msg.content }],
   }));
+
+  const history: Content[] = [];
+  if (rawHistory.length > 0 && rawHistory[0].role === "model") {
+    // 最初のメッセージが AI から始まっている場合、ダミーのユーザーメッセージを先頭に差し込む
+    history.push({ role: "user", parts: [{ text: "それでは、練習を開始しましょう。" }] });
+  }
+  history.push(...rawHistory);
 
   // モデルからチャットセッションを開始（システム命令を動的に設定）
   const chat = model.startChat({
