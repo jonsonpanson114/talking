@@ -8,7 +8,7 @@ const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 // Gemini 3.1 Flash モデルを使用
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash", 
+  model: "gemini-3.1-flash", 
 });
 
 const personaPrompts = {
