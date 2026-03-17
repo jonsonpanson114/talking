@@ -130,19 +130,30 @@ ${partnerStyle.promptHint}
 5. 次の一手につながる一文を時々入れる（毎回ではない）
 `;
 
-  // 履歴の変換 (Gemini 形式)
+  // 履歴の変換 (Gemini 形式: user と model のみ)
   const history: Content[] = messages.slice(0, -1).map(msg => ({
     role: msg.role === "assistant" ? "model" : "user",
     parts: [{ text: msg.content }],
   }));
 
+  // モデルからチャットセッションを開始（システム命令を動的に設定）
   const chat = model.startChat({
     history: history,
-    systemInstruction: systemPrompt,
+    generationConfig: {
+      maxOutputTokens: 500,
+    },
   });
 
+  // 実際には systemInstruction は getGenerativeModel 時の設定が望ましいが、
+  // 現状の構造を崩さず、最初のメッセージにコンテキストを混ぜる（または sendMessage する）
+  // 3-flash-preview では startChat の引数に systemInstruction が通らない場合があるため、
+  // ここでは sendMessage にコンテキストを統合するか、別の安全な方法をとる。
+  // 安全策として、システムプロンプトをパーツとして追加する。
   const lastMessage = messages[messages.length - 1].content;
-  const result = await chat.sendMessage(lastMessage);
+  const result = await chat.sendMessage([
+    { text: systemPrompt },
+    { text: lastMessage }
+  ]);
   const response = result.response;
 
   return NextResponse.json({
