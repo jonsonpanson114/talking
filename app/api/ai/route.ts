@@ -147,9 +147,6 @@ ${partnerStyle.promptHint}
   // モデルからチャットセッションを開始（システム命令を動的に設定）
   const chat = model.startChat({
     history: history,
-    generationConfig: {
-      maxOutputTokens: 500,
-    },
   });
 
   // 実際には systemInstruction は getGenerativeModel 時の設定が望ましいが、
