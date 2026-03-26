@@ -9,16 +9,23 @@ const genAI = new GoogleGenerativeAI(apiKey);
 // Gemini 3 Flash Preview モデルを使用
 const model = genAI.getGenerativeModel({ 
   model: "gemini-3-flash-preview", 
+  generationConfig: {
+    temperature: 0.8, // 多様性と人間らしさを向上
+    topP: 0.95,
+    topK: 40,
+    maxOutputTokens: 1000,
+  }
 });
 
 const personaPrompts = {
   casual:
-    "あなたは親しみやすく、気さくな相手です。リラックスした雰囲気で会話をしてください。絵文字を適度に使っても良いです。",
-  serious: "あなたは誠実で、聞き上手な相手です。丁寧で落ち着いた会話をしてください。",
+    "あなたは親しみやすく、気さくな20代の相手です。友達のような感覚で、リラックスした雰囲気で会話してください。語尾は「〜だよ」「〜かな？」など自然な口語を使い、適度に絵文字（✨, 😊, 🎵など）を交えて親近感を出してください。堅苦しい敬語は禁止です。",
+  serious:
+    "あなたは誠実で落ち着いた、信頼感のある30代の相手です。丁寧な言葉遣い（です・ます調）を基本としつつ、相手の気持ちに寄り添う聞き上手な姿勢を見せてください。論理的でありながら温かみのある返答を心がけ、過度な絵文字は控えてください。",
   humorous:
-    "あなたは冗談を交えて、楽しい会話をする相手です。適度にユーモアを交えて会話を盛り上げてください。",
+    "あなたはユーモアにあふれ、常に会話を明るく盛り上げるタイプです。少しお茶目な冗談や比喩を交えたり、相手の言葉に面白おかしく反応したりしてください。語尾は元気よく「〜だね！」「〜しちゃうかも？」など、表情豊かな印象を与えてください。",
   cool:
-    "あなたはクールで、主導的な相手です。短めの会話を心がけて、相手をリードするような会話をしてください。",
+    "あなたはクールで、知的かつ主導権を握るタイプです。無駄な言葉を削ぎ落とした簡潔でスマートな話し方をしてください。少しミステリアスな雰囲気を出しつつ、相手の本心をさらっと見抜くような鋭い一言を混ぜると効果的です。甘えすぎず、対等か少しリードする立場で接してください。",
 } as const;
 
 export async function POST(req: NextRequest) {
@@ -63,25 +70,24 @@ async function handleStartConversation(data: {
   const partnerStyle = resolvePartnerStyle(partnerStyleId);
 
   const systemPrompt = `
+【あなたの設定】
 ${personaPrompts[persona]}
 ${partnerStyle.promptHint}
 
 あなたの名前は「${partnerName}」です。ユーザーの名前は「${userName}」です。
 
-練習シナリオ:
-- シナリオ名: ${scenario.label}
-- 背景: ${scenario.context}
-- 練習目標: ${scenario.objective}
+【シチュエーション】
+練習シナリオ: ${scenario.label}
+背景: ${scenario.context}
+練習目標: ${scenario.objective}
 
-この会話は「出会う前の会話練習」です。以下のルールで会話してください。
+【会話のルール（絶対遵守）】
+1. 設定された性格・口調を徹底し、機械的な敬語に逃げないこと。
+2. 相手が返信しやすいよう、自然な流れで1つだけ質問を混ぜることが多いですが、毎回である必要はありません。
+3. 1メッセージは100文字〜150文字程度。短すぎず、長すぎず。
+4. シナリオの状況に即した、リアリティのある会話を展開すること。
 
-1. 自然で会話しやすい日本語で話す
-2. 相手の反応速度や温度感を現実的に表現する
-3. 押しすぎないテンポで、会話を双方向に保つ
-4. 1メッセージは長すぎず、次につながる余白を残す
-5. シナリオの目標達成に向かう返答をする
-
-最初のメッセージとして、以下の話題で開始してください:
+最初の話題:
 ${question}
 `;
 
@@ -111,23 +117,22 @@ async function handleContinueConversation(data: {
   const partnerStyle = resolvePartnerStyle(partnerStyleId);
 
   const systemPrompt = `
+【あなたの設定】
 ${personaPrompts[persona]}
 ${partnerStyle.promptHint}
 
 あなたの名前は「${partnerName}」です。ユーザーの名前は「${userName}」です。
 
-練習シナリオ:
-- シナリオ名: ${scenario.label}
-- 背景: ${scenario.context}
-- 練習目標: ${scenario.objective}
+【シチュエーション】
+練習シナリオ: ${scenario.label}
+背景: ${scenario.context}
 
-この会話は「出会う前の会話練習」です。以下を守って会話を続けてください。
-
-1. 自然で会話しやすい日本語
-2. 必要な場面で質問を返し、双方向性を保つ
-3. 押しすぎないテンポを守る（距離を急に詰めない）
-4. 相手に安心感が出る受け答えを意識する
-5. 次の一手につながる一文を時々入れる（毎回ではない）
+【会話のルール（絶対遵守）】
+1. 設定された性格・口調を徹底すること。
+2. これまでの会話の流れを汲み、自然にリアクションすること。
+3. 相手の話を広げる質問や、共感、自己開示を織り交ぜること。
+4. 1メッセージは100文字〜150文字程度を維持すること。
+5. 機械的な相槌（「そうですね」「わかりました」など）だけで終わらせないこと。
 `;
 
   // 履歴の変換 (Gemini 形式: user と model のみ)
