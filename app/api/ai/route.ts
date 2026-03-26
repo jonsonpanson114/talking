@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, Content, Part } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content, Part, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/lib/types";
 
@@ -276,10 +276,34 @@ async function handleEvaluateConversation(data: {
 ${messages.map((item, index) => `[${index + 1}ターン目] ${item.role}: ${item.content}`).join("\n")}
 `;
 
+  // 評価用に、より安定した設定（temperature: 0）と緩和されたセーフティ設定を使用
+  const evalModel = genAI.getGenerativeModel({ 
+    model: "gemini-3-flash-preview",
+    generationConfig: { temperature: 0 },
+    safetySettings: [
+      { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    ]
+  });
+
   try {
-    const result = await model.generateContent(prompt);
+    const result = await evalModel.generateContent(prompt);
     const response = result.response;
-    const responseText = response.text();
+    
+    let responseText = "";
+    try {
+      responseText = response.text();
+    } catch (e) {
+      console.error("Safety block or other issue getting response text:", e);
+      // フォールバック: 理由を確認
+      const candidate = response.candidates?.[0];
+      if (candidate?.finishReason === "SAFETY") {
+        throw new Error("Evaluation blocked by safety filters. Please try a cleaner conversation.");
+      }
+      throw e;
+    }
 
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
