@@ -276,22 +276,29 @@ async function handleEvaluateConversation(data: {
 ${messages.map((item, index) => `[${index + 1}ターン目] ${item.role}: ${item.content}`).join("\n")}
 `;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const responseText = response.text();
-
   try {
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    const parsed = jsonMatch ? (JSON.parse(jsonMatch[0]) as any) : null;
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const responseText = response.text();
 
-    if (!parsed) {
-      throw new Error("Failed to parse evaluation JSON");
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("No JSON found in response:", responseText);
+      throw new Error("Failed to find JSON in AI response");
     }
 
+    const parsed = JSON.parse(jsonMatch[0]);
     const evaluation = normalizeEvaluation(parsed);
     return NextResponse.json({ evaluation });
-  } catch (error) {
-    console.error("Failed to parse evaluation:", error);
-    return NextResponse.json({ error: "Failed to evaluate conversation" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Evaluation API detail error:", {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.text ? await error.response.text() : "N/A"
+    });
+    return NextResponse.json({ 
+      error: "Failed to evaluate conversation",
+      detail: error.message 
+    }, { status: 500 });
   }
 }
