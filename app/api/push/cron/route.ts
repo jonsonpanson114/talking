@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+import { getSubscriptionsToNotify, deleteSubscription } from "@/lib/kv";
 
 // VAPID設定
 const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -31,33 +32,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 現在時刻を取得
+    // 現在時刻（JST）を取得
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+    // Vercel ServerはUTCなので、JSTに変換 (UTC+9)
+    const jstOffset = 9 * 60;
+    const jstDate = new Date(now.getTime() + (jstOffset * 60 * 1000));
+    const currentHour = jstDate.getUTCHours();
+    const currentMinute = jstDate.getUTCMinutes();
 
-    // 通知対象のユーザーを取得（本来はDBから）
-    // この実装では、リクエストボディで送信対象のSubscriptionを受け取る
-    const { subscriptions } = await req.json();
+    console.log(`Executing Cron Job at JST: ${currentHour}:${currentMinute}`);
 
-    if (!subscriptions || !Array.isArray(subscriptions)) {
-      return NextResponse.json(
-        { error: "Subscriptions array is required" },
-        { status: 400 }
-      );
+    // DBから通知対象のユーザーを取得
+    const subscriptions = await getSubscriptionsToNotify(currentHour, currentMinute);
+
+    if (subscriptions.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: "No users to notify at this time",
+        currentTimeJST: `${currentHour}:${currentMinute}`,
+      });
     }
 
     const results = {
+      total: subscriptions.length,
       success: 0,
       failed: 0,
-      expired: [] as string[],
+      deleted: 0,
     };
 
     // 並列で通知を送信
-    const sendPromises = subscriptions.map(async (sub: any) => {
+    const sendPromises = subscriptions.map(async (data) => {
       try {
         await webpush.sendNotification(
-          sub,
+          data.subscription,
           JSON.stringify({
             title: "Talking - 練習の時間です！",
             body: "5分間の会話練習で、今日もスキルアップしましょう。",
@@ -72,10 +79,13 @@ export async function POST(req: NextRequest) {
         );
         results.success++;
       } catch (error: any) {
-        if (error.statusCode === 410) {
-          results.expired.push(sub.endpoint);
+        // ステータスコード410（Gone）または404（Not Found）は、購読が失効している
+        if (error.statusCode === 410 || error.statusCode === 404) {
+          await deleteSubscription(data.subscription.endpoint);
+          results.deleted++;
         }
         results.failed++;
+        console.error(`Failed to send push to ${data.subscription.endpoint}:`, error.message);
       }
     });
 
@@ -84,7 +94,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       results,
-      timestamp: now.toISOString(),
+      timestamp: jstDate.toISOString(),
     });
   } catch (error) {
     console.error("Cron job error:", error);
@@ -100,6 +110,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     message: "Cron endpoint is ready",
     usage: "POST with x-cron-secret header or authorization bearer token",
-    currentTime: new Date().toISOString(),
+    currentTimeUTC: new Date().toISOString(),
   });
 }

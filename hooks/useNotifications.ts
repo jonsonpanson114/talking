@@ -42,6 +42,29 @@ export function useNotifications() {
     return () => clearInterval(interval);
   }, [permission]);
 
+  // サーバーに最新の設定を同期する
+  const syncWithServer = useCallback(async (updatedSettings: NotificationSettings) => {
+    const subscription = loadPushSubscription();
+    if (subscription && permission === "granted") {
+      try {
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            subscription, 
+            settings: {
+              hour: updatedSettings.hour,
+              minute: updatedSettings.minute,
+              enabled: updatedSettings.enabled
+            }
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to sync settings with server:", error);
+      }
+    }
+  }, [permission]);
+
   // 許可リクエスト（ユーザー操作時のみ呼び出し）
   const requestNotificationPermission = useCallback(async () => {
     const result = await requestPermission();
@@ -71,8 +94,9 @@ export function useNotifications() {
       setSettings(updated);
       saveNotificationSettings(updated);
       syncNotificationSettings(updated);
+      syncWithServer(updated); // サーバーにも同期
     },
-    [settings]
+    [settings, syncWithServer]
   );
 
   // オンオフ切り替え
@@ -82,8 +106,9 @@ export function useNotifications() {
       setSettings(updated);
       saveNotificationSettings(updated);
       syncNotificationSettings(updated);
+      syncWithServer(updated); // サーバーにも同期
     },
-    [settings]
+    [settings, syncWithServer]
   );
 
   // 「後で設定」を選択したことを記録
@@ -110,11 +135,18 @@ export function useNotifications() {
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
       });
 
-      // サーバーに送信して登録
+      // サーバーに送信して登録（設定も含める）
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription }),
+        body: JSON.stringify({ 
+          subscription,
+          settings: {
+            hour: settings.hour,
+            minute: settings.minute,
+            enabled: settings.enabled
+          }
+        }),
       });
 
       if (!response.ok) {
@@ -129,7 +161,7 @@ export function useNotifications() {
       console.error("Failed to register push subscription:", error);
       return false;
     }
-  }, [permission]);
+  }, [permission, settings]);
 
   // Push Subscriptionを解除
   const unregisterPushSubscription = useCallback(async () => {

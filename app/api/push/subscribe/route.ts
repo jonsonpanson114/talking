@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+import { saveSubscription } from "@/lib/kv";
 
 // VAPID設定
 const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -17,7 +18,7 @@ if (publicKey && privateKey) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { subscription } = await req.json();
+    const { subscription, settings } = await req.json();
 
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json(
@@ -26,31 +27,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Vercel KVに保存（永続化）
+    try {
+      await saveSubscription(subscription, settings || {});
+      console.log("Subscription saved to KV:", subscription.endpoint);
+    } catch (kvError) {
+      console.error("Failed to save subscription to KV:", kvError);
+      // KV保存に失敗しても、通知自体は送れる可能性があるので続行するが警告
+    }
+
     // Push Subscriptionを検証（テスト送信）
     try {
       await webpush.sendNotification(
         subscription,
         JSON.stringify({
           title: "Talking - 通知が有効になりました",
-          body: "毎日の練習リマインダーをお送りします。",
+          body: "あなたの生活リズムに合わせて、最適なタイミングでリマインダーをお送りします。",
           icon: "/icon-192.png",
           badge: "/icon-192.png",
           type: "test",
+          data: {
+            url: "/",
+          }
         })
       );
-    } catch (error) {
-      console.error("Failed to send test notification:", error);
-      // テスト失敗は無視して続行
+    } catch (pushError) {
+      console.error("Failed to send initial test notification:", pushError);
+      // テスト送信失敗は、ブラウザ側での登録には成功しているため400エラーにはしない
     }
 
     return NextResponse.json({
       success: true,
-      message: "Subscription registered successfully",
+      message: "Subscription registered and saved successfully",
     });
   } catch (error) {
-    console.error("Push subscription error:", error);
+    console.error("Push subscription API error:", error);
     return NextResponse.json(
-      { error: "Failed to register subscription" },
+      { error: "Failed to process subscription" },
       { status: 500 }
     );
   }

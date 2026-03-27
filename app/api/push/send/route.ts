@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+import { deleteSubscription } from "@/lib/kv";
 
 // VAPID設定
 const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -16,10 +17,13 @@ if (publicKey && privateKey) {
 }
 
 export async function POST(req: NextRequest) {
+  let subscriptionData: any = null;
   try {
-    const { subscription, data } = await req.json();
+    const body = await req.json();
+    subscriptionData = body.subscription;
+    const data = body.data;
 
-    if (!subscription) {
+    if (!subscriptionData || !subscriptionData.endpoint) {
       return NextResponse.json(
         { error: "Subscription is required" },
         { status: 400 }
@@ -28,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     // 通知送信
     await webpush.sendNotification(
-      subscription,
+      subscriptionData,
       JSON.stringify({
         title: data?.title || "Talking - 練習の時間です！",
         body: data?.body || "5分間の会話練習で、今日もスキルアップしましょう。",
@@ -47,7 +51,14 @@ export async function POST(req: NextRequest) {
     console.error("Push send error:", error);
 
     // Subscriptionが無効な場合
-    if (error.statusCode === 410) {
+    if ((error.statusCode === 410 || error.statusCode === 404) && subscriptionData?.endpoint) {
+      // KVからも削除
+      try {
+        await deleteSubscription(subscriptionData.endpoint);
+      } catch (kvError) {
+        console.error("Failed to delete expired subscription from KV:", kvError);
+      }
+      
       return NextResponse.json(
         { error: "Subscription has expired", code: "EXPIRED" },
         { status: 410 }
