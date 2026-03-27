@@ -11,23 +11,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Send Push Notification
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load subscriptions and send notifications
         run: |
-          # 本番環境のPush通知エンドポイントを叩く
-          # 通知: この実装はデモ用です。本番ではDBからSubscriptionを取得する必要があります。
-          curl -X POST ${{ secrets.APP_URL }}/api/push/send \
-            -H "Content-Type: application/json" \
-            -d '{
-              "subscription": {
-                "endpoint": "user-subscription-endpoint",
-                "keys": {
-                  "p256dh": "user-p256dh-key",
-                  "auth": "user-auth-key"
+          # Subscriptionsを読み込み
+          if [ ! -f "data/subscriptions.json" ]; then
+            echo "No subscriptions found"
+            exit 0
+          fi
+
+          # Subscriptionsを読み込んで、各ユーザーに通知送信
+          subscriptions=$(cat data/subscriptions.json | jq -r '.[] | @json')
+          count=$(echo "$subscriptions" | jq -r 'length')
+
+          echo "Found $count subscriptions"
+
+          # 各サブスクリプションに通知送信
+          for sub in $(echo "$subscriptions" | jq -r '.[]'); do
+            endpoint=$(echo "$sub" | jq -r '.subscription.endpoint')
+            settings=$(echo "$sub" | jq -r '.notificationSettings')
+
+            # 通知時間をチェック
+            current_hour=$(date -u +%H)
+            current_minute=$(date -u +%M)
+            notification_hour=$(echo "$settings" | jq -r '.hour // 20')
+            notification_minute=$(echo "$settings" | jq -r '.minute // 0')
+
+            if [ "$current_hour" != "$notification_hour" ] || [ "$current_minute" != "$notification_minute" ]; then
+              continue
+            fi
+
+            echo "Sending notification to: $endpoint"
+
+            # 通知送信
+            curl -X POST ${{ secrets.APP_URL }}/api/push/send \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"subscription\": $(echo "$sub" | jq -r '.subscription'),
+                \"data\": {
+                  \"title\": \"Talking - 練習の時間です！\",
+                  \"body\": \"5分間の会話練習で、今日もスキルアップしましょう。\",
+                  \"url\": \"/roleplay\"
                 }
-              },
-              "data": {
-                "title": "Talking - 練習の時間です！",
-                "body": "5分間の会話練習で、今日もスキルアップしましょう。",
-                "url": "/roleplay"
-              }
-            }'
+              }"
+
+            # レート制限のため、1秒待機
+            sleep 1
+          done
+
