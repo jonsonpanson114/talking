@@ -88,3 +88,23 @@ export interface ImprovementSuggestion {
 
 export type Category = Question["category"];
 export type Persona = ConversationSettings["persona"];
+
+export interface NotificationSettings {
+  enabled: boolean;              // 通知オンオフ
+  hour: number;                  // 通知時 (0-23)
+  minute: number;                // 通知分 (0-59)
+  permission: "default" | "granted" | "denied";
+  lastNotificationDate?: string; // 重複防止用 (ISO日付文字列)
+  hasDismissedPrompt?: boolean;  // 「後で設定」を選択したか
+  pushSubscription?: PushSubscriptionJSON; // Web Push Subscription
+}
+
+// Push Subscriptionのシリアライズ用型
+export interface PushSubscriptionJSON {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+  expirationTime?: number | null;
+}

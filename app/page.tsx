@@ -1,10 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Sparkles, TrendingUp, Lightbulb, ArrowRight, Compass } from "lucide-react";
+import { MessageSquare, Sparkles, TrendingUp, Lightbulb, ArrowRight, Compass, Settings } from "lucide-react";
 import { motion } from "framer-motion";
+import { NotificationPermission } from "@/components/NotificationPermission";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useServiceWorker } from "@/hooks/useServiceWorker";
 
 export default function HomePage() {
+  // Service Worker登録（開発環境では無効）
+  useServiceWorker();
+
+  const { settings, permission, requestPermission, dismissPrompt, isSupported } = useNotifications();
+
+  // 通知許可プロンプト表示条件
+  const showNotificationPrompt =
+    isSupported &&
+    permission === "default" &&
+    !settings.enabled &&
+    !settings.hasDismissedPrompt;
+
   const features = [
     {
       id: "cards",
@@ -103,6 +118,16 @@ export default function HomePage() {
           animate="show"
           className="max-w-5xl mx-auto"
         >
+          {/* 通知許可プロンプト（条件付き表示） */}
+          {showNotificationPrompt && (
+            <motion.div variants={item}>
+              <NotificationPermission
+                onEnable={requestPermission}
+                onDismiss={dismissPrompt}
+              />
+            </motion.div>
+          )}
+
           <div className="bento-grid gap-3 sm:gap-6">
             {features.map((feature) => (
               <motion.div key={feature.id} variants={item} className={feature.size === "large" ? "bento-item-large" : ""}>
@@ -156,6 +181,25 @@ export default function HomePage() {
                 </p>
               </div>
             </div>
+          </motion.div>
+
+          {/* 設定ページへのリンク */}
+          <motion.div variants={item}>
+            <Link
+              href="/settings"
+              className="glass-card flex items-center justify-between p-4 hover:bg-white/5 transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl glass border-white/10 flex items-center justify-center">
+                  <Settings className="w-5 h-5 text-white/60" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium">設定</h3>
+                  <p className="text-xs text-white/30">通知設定を変更</p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+            </Link>
           </motion.div>
         </motion.div>
       </main>
