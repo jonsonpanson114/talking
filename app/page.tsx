@@ -5,12 +5,8 @@ import { MessageSquare, Sparkles, TrendingUp, Lightbulb, ArrowRight, Compass, Se
 import { motion } from "framer-motion";
 import { NotificationPermission } from "@/components/NotificationPermission";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useServiceWorker } from "@/hooks/useServiceWorker";
 
 export default function HomePage() {
-  // Service Worker登録（開発環境では無効）
-  useServiceWorker();
-
   const { settings, permission, requestPermission, dismissPrompt, isSupported } = useNotifications();
 
   // 通知許可プロンプト表示条件
@@ -74,8 +70,7 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen">
       <div className="mesh-gradient" />
-      
-      {/* ヒーローセクション */}
+
       <header className="relative pt-2 sm:pt-16 pb-2 sm:pb-12 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
@@ -89,7 +84,7 @@ export default function HomePage() {
               The Art of Conversation
             </span>
           </motion.div>
-          
+
           <motion.h1
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -98,7 +93,7 @@ export default function HomePage() {
           >
             Talking
           </motion.h1>
-          
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -110,7 +105,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* メイングリッド */}
       <main className="px-4 sm:px-6 pb-6 sm:pb-16">
         <motion.div
           variants={container}
@@ -118,7 +112,6 @@ export default function HomePage() {
           animate="show"
           className="max-w-5xl mx-auto"
         >
-          {/* 通知許可プロンプト（条件付き表示） */}
           {showNotificationPrompt && (
             <motion.div variants={item}>
               <NotificationPermission
@@ -157,7 +150,6 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* クイック統計 / ヒント */}
           <motion.div variants={item} className="mt-4 sm:mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
             <div className="glass-card flex items-start gap-3 sm:gap-4 p-5 sm:p-8">
               <div className="p-2 sm:p-3 rounded-xl bg-white/5">
@@ -183,7 +175,6 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* 設定ページへのリンク */}
           <motion.div variants={item}>
             <Link
               href="/settings"
@@ -204,7 +195,6 @@ export default function HomePage() {
         </motion.div>
       </main>
 
-      {/* フッター */}
       <footer className="py-4 sm:py-6 px-4 border-t border-white/[0.04]">
         <div className="max-w-lg mx-auto text-center">
           <p className="text-white/20 text-[10px] sm:text-xs">

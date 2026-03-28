@@ -13,6 +13,19 @@ import {
   syncNotificationSettings,
 } from "@/lib/notifications";
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
 export function useNotifications() {
   const [settings, setSettings] = useState<NotificationSettings>(() =>
     loadNotificationSettings()
@@ -24,7 +37,6 @@ export function useNotifications() {
     return "denied";
   });
 
-  // 許可状態の変更を監視
   useEffect(() => {
     if (!isNotificationSupported()) return;
 
@@ -32,7 +44,6 @@ export function useNotifications() {
       setPermission(Notification.permission);
     };
 
-    // Notification.permission の変更を検知
     const interval = setInterval(() => {
       if (Notification.permission !== permission) {
         handler();
@@ -42,7 +53,6 @@ export function useNotifications() {
     return () => clearInterval(interval);
   }, [permission]);
 
-  // サーバーに最新の設定を同期する
   const syncWithServer = useCallback(async (updatedSettings: NotificationSettings) => {
     const subscription = loadPushSubscription();
     if (subscription && permission === "granted") {
@@ -50,13 +60,13 @@ export function useNotifications() {
         await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            subscription, 
+          body: JSON.stringify({
+            subscription,
             settings: {
               hour: updatedSettings.hour,
               minute: updatedSettings.minute,
-              enabled: updatedSettings.enabled
-            }
+              enabled: updatedSettings.enabled,
+            },
           }),
         });
       } catch (error) {
@@ -65,17 +75,14 @@ export function useNotifications() {
     }
   }, [permission]);
 
-  // 許可リクエスト（ユーザー操作時のみ呼び出し）
   const requestNotificationPermission = useCallback(async () => {
     const result = await requestPermission();
     setPermission(result);
 
-    // 設定を保存
     const updated = { ...settings, permission: result };
     setSettings(updated);
     saveNotificationSettings(updated);
 
-    // 許可された場合、Service Workerに同期
     if (result === "granted") {
       await syncNotificationSettings(updated);
     }
@@ -83,7 +90,6 @@ export function useNotifications() {
     return result;
   }, [settings]);
 
-  // 時間設定更新
   const updateNotificationTime = useCallback(
     (hour: number, minute: number) => {
       const updated = {
@@ -94,31 +100,28 @@ export function useNotifications() {
       setSettings(updated);
       saveNotificationSettings(updated);
       syncNotificationSettings(updated);
-      syncWithServer(updated); // サーバーにも同期
+      syncWithServer(updated);
     },
     [settings, syncWithServer]
   );
 
-  // オンオフ切り替え
   const toggleEnabled = useCallback(
     (enabled: boolean) => {
       const updated = { ...settings, enabled };
       setSettings(updated);
       saveNotificationSettings(updated);
       syncNotificationSettings(updated);
-      syncWithServer(updated); // サーバーにも同期
+      syncWithServer(updated);
     },
     [settings, syncWithServer]
   );
 
-  // 「後で設定」を選択したことを記録
   const dismissPrompt = useCallback(() => {
     const updated = { ...settings, hasDismissedPrompt: true };
     setSettings(updated);
     saveNotificationSettings(updated);
   }, [settings]);
 
-  // Push Subscriptionを登録
   const registerPushSubscription = useCallback(async () => {
     if (
       !("serviceWorker" in navigator) ||
@@ -128,24 +131,33 @@ export function useNotifications() {
       return false;
     }
 
+    const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!publicVapidKey) {
+      console.error("NEXT_PUBLIC_VAPID_PUBLIC_KEY is not configured");
+      return false;
+    }
+
     try {
       const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-      });
+      const existingSubscription = await registration.pushManager.getSubscription();
 
-      // サーバーに送信して登録（設定も含める）
+      const subscription =
+        existingSubscription ||
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicVapidKey) as unknown as BufferSource,
+        }));
+
       const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           subscription,
           settings: {
             hour: settings.hour,
             minute: settings.minute,
-            enabled: settings.enabled
-          }
+            enabled: settings.enabled,
+          },
         }),
       });
 
@@ -153,9 +165,7 @@ export function useNotifications() {
         throw new Error("Failed to register subscription on server");
       }
 
-      // localStorageに保存
       savePushSubscription(subscription);
-
       return true;
     } catch (error) {
       console.error("Failed to register push subscription:", error);
@@ -163,7 +173,6 @@ export function useNotifications() {
     }
   }, [permission, settings]);
 
-  // Push Subscriptionを解除
   const unregisterPushSubscription = useCallback(async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -180,7 +189,6 @@ export function useNotifications() {
     }
   }, []);
 
-  // 既に登録済みかチェック
   const isPushSubscriptionRegistered = useCallback(() => {
     return !!loadPushSubscription();
   }, []);

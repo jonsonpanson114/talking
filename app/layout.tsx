@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClientBootstrap } from "./ClientBootstrap";
 import "./globals.css";
 
 const inter = Inter({
@@ -46,6 +47,7 @@ export default function RootLayout({
         <meta property="og:type" content="website" />
       </head>
       <body className={`${inter.className} antialiased`}>
+        <ClientBootstrap />
         {children}
       </body>
     </html>

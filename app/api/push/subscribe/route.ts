@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { saveSubscription } from "@/lib/kv";
 
-// VAPID設定
 const publicKey = process.env.VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
 
 if (publicKey && privateKey) {
   webpush.setVapidDetails(
-    "mailto:your-email@example.com", // 任意のメールアドレス
+    "mailto:your-email@example.com",
     publicKey,
     privateKey
   );
@@ -27,16 +26,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vercel KVに保存（永続化）
-    try {
-      await saveSubscription(subscription, settings || {});
-      console.log("Subscription saved to KV:", subscription.endpoint);
-    } catch (kvError) {
-      console.error("Failed to save subscription to KV:", kvError);
-      // KV保存に失敗しても、通知自体は送れる可能性があるので続行するが警告
-    }
+    // 永続化に失敗した場合は成功扱いにしない
+    await saveSubscription(subscription, settings || {});
+    console.log("Subscription saved to KV:", subscription.endpoint);
 
-    // Push Subscriptionを検証（テスト送信）
     try {
       await webpush.sendNotification(
         subscription,
@@ -48,12 +41,11 @@ export async function POST(req: NextRequest) {
           type: "test",
           data: {
             url: "/",
-          }
+          },
         })
       );
     } catch (pushError) {
       console.error("Failed to send initial test notification:", pushError);
-      // テスト送信失敗は、ブラウザ側での登録には成功しているため400エラーにはしない
     }
 
     return NextResponse.json({
