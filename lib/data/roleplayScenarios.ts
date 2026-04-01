@@ -23,6 +23,27 @@ export const roleplayScenarios = [
     context:
       "初回デートの前日。会うことは決まっているが、お互いに少し緊張している。",
   },
+  {
+    id: "after-first-date",
+    label: "初デート後の感想チャット",
+    description: "デート終了後、次につなげるための重要な局面",
+    objective: "お礼と感想を伝え、次の約束へのきっかけを作る",
+    context: "初めてのデートが終わって帰宅した直後。感謝を伝えつつ、相手の好感度を確認したい状態。",
+  },
+  {
+    id: "hobby-deep-dive",
+    label: "共通の趣味についての深掘り",
+    description: "特定の話題を掘り下げて盛り上げる練習",
+    objective: "相手のこだわりを引き出し、自分の熱量も伝えつつ会話を広げる",
+    context: "趣味の話で意気投合し始めた段階。より深いレベルで共感を得たい。",
+  },
+  {
+    id: "recovery-chat",
+    label: "少し気まずい沈黙の打破",
+    description: "返信が数日空いた後のリカバリー",
+    objective: "不自然にならずに会話を再開し、元の温度感に戻す",
+    context: "忙しくて数日間返信を止めてしまった、あるいは相手からの返信が止まった後の最初のメッセージ。",
+  },
 ] as const;
 
 export const partnerStyles = [
