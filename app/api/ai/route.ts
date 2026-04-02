@@ -6,16 +6,22 @@ import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/li
 // Gemini API の初期化
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-// Gemini 3 Flash Preview モデルを使用
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-3-flash-preview", 
-  generationConfig: {
-    temperature: 0.8,
-    topP: 0.95,
-    topK: 40,
-    maxOutputTokens: 800, // 十分な余裕を持たせつつ制限
-  }
-});
+
+// システム指示に基づいた動的なモデル取得
+function getDynamicModel(systemPrompt: string) {
+  return genAI.getGenerativeModel({ 
+    model: "gemini-3-flash-preview", 
+    systemInstruction: {
+      parts: [{ text: systemPrompt }]
+    },
+    generationConfig: {
+      temperature: 0.7, // 安定性と人間らしさのバランスを調整
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 1000,
+    }
+  });
+}
 
 const personaPrompts = {
   casual:
@@ -87,16 +93,13 @@ ${partnerStyle.promptHint}
 3. 1メッセージは100文字〜150文字程度。
 4. シナリオの状況に即した、リアリティのある会話を展開すること。
 5. **文章は必ず「。」または「？」で完結させ、絶対に途中で切れた状態で出力しないでください。**
-
-最初の話題:
-${question}
+6. 会話の末尾が不自然にならないよう、最後まで丁寧に書ききること。
 `;
 
-  // Gemini では System Instruction を設定または最初のメッセージに含める
-  const result = await model.generateContent([
-    { text: systemPrompt },
-    { text: "それでは、練習を開始しましょう。最初のメッセージをお願いします。" }
-  ]);
+  const model = getDynamicModel(systemPrompt);
+  
+  // 開始メッセージの生成
+  const result = await model.generateContent("それでは、練習を開始しましょう。最初のメッセージをお願いします。設定に忠実な、自然な第一声をお願いします。");
   
   const response = result.response;
   return NextResponse.json({
@@ -137,8 +140,9 @@ ${partnerStyle.promptHint}
 6. もし考えがまとまらない場合でも、必ず文章の形を整えて終わらせてください。
 `;
 
+  const model = getDynamicModel(systemPrompt);
+
   // 履歴の変換 (Gemini 形式: user と model のみ)
-  // Gemini の制約として、履歴の最初は必ず "user" ロールである必要がある。
   const rawHistory: Content[] = messages.slice(0, -1).map(msg => ({
     role: msg.role === "assistant" ? "model" : "user",
     parts: [{ text: msg.content }],
@@ -146,26 +150,16 @@ ${partnerStyle.promptHint}
 
   const history: Content[] = [];
   if (rawHistory.length > 0 && rawHistory[0].role === "model") {
-    // 最初のメッセージが AI から始まっている場合、ダミーのユーザーメッセージを先頭に差し込む
     history.push({ role: "user", parts: [{ text: "それでは、練習を開始しましょう。" }] });
   }
   history.push(...rawHistory);
 
-  // モデルからチャットセッションを開始（システム命令を動的に設定）
   const chat = model.startChat({
     history: history,
   });
 
-  // 実際には systemInstruction は getGenerativeModel 時の設定が望ましいが、
-  // 現状の構造を崩さず、最初のメッセージにコンテキストを混ぜる（または sendMessage する）
-  // 3-flash-preview では startChat の引数に systemInstruction が通らない場合があるため、
-  // ここでは sendMessage にコンテキストを統合するか、別の安全な方法をとる。
-  // 安全策として、システムプロンプトをパーツとして追加する。
   const lastMessage = messages[messages.length - 1].content;
-  const result = await chat.sendMessage([
-    { text: systemPrompt },
-    { text: lastMessage }
-  ]);
+  const result = await chat.sendMessage(lastMessage);
   const response = result.response;
 
   return NextResponse.json({
