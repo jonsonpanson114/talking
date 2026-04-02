@@ -5,6 +5,7 @@ const withPWA = withPWAFn({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  importScripts: ['/sw-custom.js'],
 });
 
 /** @type {import('next').NextConfig} */

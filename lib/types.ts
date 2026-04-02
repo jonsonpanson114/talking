@@ -35,7 +35,13 @@ export interface ConversationMessage {
 export type RoleplayScenarioId =
   | "matching-app-first-chat"
   | "date-scheduling"
-  | "before-first-date";
+  | "before-first-date"
+  | "after-first-date"
+  | "hobby-deep-dive"
+  | "recovery-chat"
+  | "mutual-travel-planning"
+  | "professional-networking"
+  | "difficult-apology";
 
 export type PartnerStyleId = "positive" | "cautious" | "busy";
 

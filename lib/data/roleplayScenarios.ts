@@ -44,6 +44,27 @@ export const roleplayScenarios = [
     objective: "不自然にならずに会話を再開し、元の温度感に戻す",
     context: "忙しくて数日間返信を止めてしまった、あるいは相手からの返信が止まった後の最初のメッセージ。",
   },
+  {
+    id: "mutual-travel-planning",
+    label: "初めての旅行の計画",
+    description: "行きたい場所が分かれた時の建設的な相談",
+    objective: "自分の意見を伝えつつ相手の希望も汲み取り、妥協点を見つけて盛り上げる",
+    context: "仲良くなってきて初めての旅行を計画中。お互いのこだわりが少し違う場面で、すり合わせが必要な状態。",
+  },
+  {
+    id: "professional-networking",
+    label: "社会人同士の交流（仕事・趣味）",
+    description: "仕事の話を重くならずに広げる練習",
+    objective: "相手の専門性を尊重しつつ、共通の価値観や興味を見つけ出す",
+    context: "同世代の社会人とマッチング。お互いの仕事の話から、人柄を深く知ろうとする段階。",
+  },
+  {
+    id: "difficult-apology",
+    label: "デリケートなお詫びとリスケ",
+    description: "気まずい沈黙やミスを誠実にリセットする",
+    objective: "誠実にお詫びしつつ、ネガティブな空気を変えて次につなげる",
+    context: "急用でデートを直前キャンセルした、あるいは長期間返信を忘れていた際、関係を修復するためのやり取り。",
+  },
 ] as const;
 
 export const partnerStyles = [

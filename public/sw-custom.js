@@ -49,6 +49,8 @@ self.addEventListener("push", (event) => {
     badge: data.badge || "/icon-192.png",
     tag: data.tag || "practice-reminder",
     requireInteraction: data.requireInteraction || false,
+    renotify: true, // 同じURL/タグでも再度通知
+    vibrate: [200, 100, 200], // Androidでの視認性向上
     data: data.data || {},
   };
 
