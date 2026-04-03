@@ -1,25 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, Content, HarmCategory, HarmBlockThreshold, SchemaType } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  Content,
+  HarmCategory,
+  HarmBlockThreshold,
+  SchemaType,
+} from "@google/generative-ai";
 import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/lib/types";
 
-// Gemini API の初期化 (Version 3.1 Standard準拠)
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// システム指示に基づいた動的なモデル取得 (gemini-3-flash-preview を使用)
 function getDynamicModel(systemPrompt: string) {
-  return genAI.getGenerativeModel({ 
-    model: "gemini-3-flash-preview", 
-    systemInstruction: {
-      parts: [{ text: systemPrompt }]
-    },
+  return genAI.getGenerativeModel({
+    model: "gemini-3-flash-preview",
+    systemInstruction: systemPrompt,
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,
       topK: 40,
       maxOutputTokens: 1000,
-    }
+    },
   });
 }
 
@@ -34,16 +36,51 @@ const personaPrompts = {
     "あなたはクールで、知的かつ主導権を握るタイプです。無駄な言葉を削ぎ落とした簡潔でスマートな話し方をしてください。少しミステリアスな雰囲気を出しつつ、相手の本心をさらっと見抜くような鋭い一言を混ぜると効果的です。甘えすぎず、対等か少しリードする立場で接してください。",
 } as const;
 
+function resolveScenario(scenarioId: RoleplayScenarioId) {
+  return roleplayScenarios.find((item) => item.id === scenarioId) ?? roleplayScenarios[0];
+}
+
+function resolvePartnerStyle(partnerStyleId: PartnerStyleId) {
+  return partnerStyles.find((item) => item.id === partnerStyleId) ?? partnerStyles[0];
+}
+
+function isRetriableGeminiError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("503") || message.includes("429") || message.includes("Service Unavailable");
+}
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!isRetriableGeminiError(error) || attempt === retries) {
+        throw error;
+      }
+      await sleep(400 * (attempt + 1));
+    }
+  }
+  throw lastError;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { action, data } = await req.json();
 
     if (!apiKey) {
-      console.error("API Key is missing in environment variables.");
-      return NextResponse.json({ 
-        error: "API Key not configured", 
-        detail: "Vercelの環境変数 GEMINI_API_KEY を設定してください。" 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "API Key not configured",
+          detail: "Vercelの環境変数 GEMINI_API_KEY を設定してください。",
+        },
+        { status: 500 }
+      );
     }
 
     switch (action) {
@@ -58,19 +95,14 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     console.error("AI API top-level error:", error);
-    return NextResponse.json({ 
-      error: "Failed to process request",
-      detail: error.message 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Failed to process request",
+        detail: error?.message ?? "unknown error",
+      },
+      { status: 500 }
+    );
   }
-}
-
-function resolveScenario(scenarioId: RoleplayScenarioId) {
-  return roleplayScenarios.find((item) => item.id === scenarioId) ?? roleplayScenarios[0];
-}
-
-function resolvePartnerStyle(partnerStyleId: PartnerStyleId) {
-  return partnerStyles.find((item) => item.id === partnerStyleId) ?? partnerStyles[0];
 }
 
 async function handleStartConversation(data: {
@@ -81,7 +113,7 @@ async function handleStartConversation(data: {
   scenarioId: RoleplayScenarioId;
   partnerStyleId: PartnerStyleId;
 }) {
-  const { question, userName, partnerName, persona, scenarioId, partnerStyleId } = data;
+  const { userName, partnerName, persona, scenarioId, partnerStyleId } = data;
 
   const scenario = resolveScenario(scenarioId);
   const partnerStyle = resolvePartnerStyle(partnerStyleId);
@@ -103,18 +135,26 @@ ${partnerStyle.promptHint}
 2. 相手が返信しやすいよう、自然な流れで1つだけ質問を混ぜてください。
 3. 1メッセージは100文字〜150文字程度。
 4. シナリオの状況に即した、リアリティのある会話を展開すること。
-5. **文章は必ず「。」または「？」で完結させ、絶対に途中で切れた状態で出力しないでください。**
-6. 会話の末尾が不自然にならないよう、最後まで丁寧に書ききること。
+5. 文章は必ず「。」または「？」で完結させること。
 `;
 
-  const model = getDynamicModel(systemPrompt);
-  
-  const result = await model.generateContent("それでは、練習を開始しましょう。最初のメッセージをお願いします。設定に忠実な、自然な第一声をお願いします。");
-  const response = result.response;
-  
-  return NextResponse.json({
-    response: response.text(),
-  });
+  try {
+    const model = getDynamicModel(systemPrompt);
+    const result = await withRetry(() =>
+      model.generateContent(
+        "それでは、練習を開始しましょう。最初のメッセージをお願いします。設定に忠実な、自然な第一声をお願いします。"
+      )
+    );
+    const response = result.response.text();
+    return NextResponse.json({ response });
+  } catch (error) {
+    console.error("Start conversation failed:", error);
+    return NextResponse.json({
+      response:
+        `はじめまして、${userName}さん。マッチありがとうございます。最近ちょっと気分が上がった出来事ってありましたか？`,
+      fallback: true,
+    });
+  }
 }
 
 async function handleContinueConversation(data: {
@@ -145,40 +185,66 @@ ${partnerStyle.promptHint}
 1. 設定された性格・口調を徹底し、自然にリアクションすること。
 2. 相手の話を広げる質問や、共感、自己開示を織り交ぜること。
 3. 1メッセージは100文字〜150文字程度を維持すること。
-4. 機械的な相槌だけで終わらせないこと。
-5. **文章は必ず「。」または「？」で最後まで完結させ、途切れた状態で送信することは厳禁です。**
-6. もし考えがまとまらない場合でも、必ず文章の形を整えて終わらせてください。
+4. 文章は必ず「。」または「？」で最後まで完結させること。
 `;
 
-  const model = getDynamicModel(systemPrompt);
+  try {
+    const model = getDynamicModel(systemPrompt);
 
-  const rawHistory: Content[] = messages.slice(0, -1).map(msg => ({
-    role: msg.role === "assistant" ? "model" : "user",
-    parts: [{ text: msg.content }],
-  }));
+    const rawHistory: Content[] = messages.slice(0, -1).map((msg) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
 
-  const history: Content[] = [];
-  if (rawHistory.length > 0 && rawHistory[0].role === "model") {
-    history.push({ role: "user", parts: [{ text: "それでは、練習を開始しましょう。" }] });
+    const history: Content[] = [];
+    if (rawHistory.length > 0 && rawHistory[0].role === "model") {
+      history.push({ role: "user", parts: [{ text: "それでは、練習を開始しましょう。" }] });
+    }
+    history.push(...rawHistory);
+
+    const chat = model.startChat({ history });
+    const lastMessage = messages[messages.length - 1].content;
+    const result = await withRetry(() => chat.sendMessage(lastMessage));
+    const response = result.response.text();
+
+    return NextResponse.json({ response });
+  } catch (error) {
+    console.error("Continue conversation failed:", error);
+    return NextResponse.json({
+      response:
+        "なるほど、それはいいですね。もう少し詳しく聞きたいです。特にどんなところが一番印象に残りましたか？",
+      fallback: true,
+    });
   }
-  history.push(...rawHistory);
-
-  const chat = model.startChat({
-    history: history,
-  });
-
-  const lastMessage = messages[messages.length - 1].content;
-  const result = await chat.sendMessage(lastMessage);
-  const response = result.response;
-
-  return NextResponse.json({
-    response: response.text(),
-  });
 }
 
-/**
- * 学習用: 会話の評価 (Response Schema 強制 Version 3.1)
- */
+function defaultEvaluation(messages: Array<{ role: string; content: string }>): ConversationEvaluation {
+  return {
+    score: 65,
+    twoWayScore: 60,
+    balanceScore: 60,
+    connectionScore: 60,
+    naturalnessScore: 60,
+    curiosityScore: 60,
+    selfDisclosureScore: 60,
+    empathyScore: 60,
+    paceScore: 65,
+    nextStepScore: 60,
+    lengthFeedback: "good",
+    feedback: "一時的に詳細評価エンジンへ接続できなかったため、簡易評価を返しています。",
+    improvements: ["一文だけでも相手への質問を添える"],
+    strengths: ["会話を継続しようとする姿勢がある"],
+    questionCount: 0,
+    totalTurns: messages.length,
+    oneFocusImprovement: "次の返答で、相手に具体質問を1つ入れる",
+    nextMessageExample: "それいいですね。もう少し詳しく聞いてもいいですか？",
+    goodMoments: [],
+    improvementSuggestions: [],
+    nextGoals: ["質問と自己開示を1:1で入れる"],
+    partnerTypeTips: "短くてもいいので、相手の話題を拾う一言を先に置くと自然です。",
+  };
+}
+
 async function handleEvaluateConversation(data: {
   messages: Array<{ role: string; content: string }>;
   userName: string;
@@ -199,16 +265,19 @@ async function handleEvaluateConversation(data: {
 相手タイプ: ${partnerStyle.label} （${partnerStyle.description}）
 
 会話ログ:
-${messages.map((item, index) => `[${index + 1}ターン目] ${item.role === 'assistant' ? partnerName : userName}: ${item.content}`).join("\n")}
+${messages
+  .map(
+    (item, index) =>
+      `[${index + 1}ターン目] ${item.role === "assistant" ? partnerName : userName}: ${item.content}`
+  )
+  .join("\n")}
 `;
 
-  // Response Schema の定義 (最先端)
-  const evalModel = genAI.getGenerativeModel({ 
+  const evalModel = genAI.getGenerativeModel({
     model: "gemini-3-flash-preview",
-    systemInstruction: {
-      parts: [{ text: "あなたはプロの会話コーチです。提示された会話ログを分析し、ユーザーに対する具体的なフィードバックをJSON形式で返してください。スコアは厳格に付け、改善点は具体的かつ実行可能なものにしてください。" }]
-    },
-    generationConfig: { 
+    systemInstruction:
+      "あなたはプロの会話コーチです。会話ログを分析し、具体的な改善提案をJSONで返してください。",
+    generationConfig: {
       temperature: 0.1,
       responseMimeType: "application/json",
       responseSchema: {
@@ -224,7 +293,7 @@ ${messages.map((item, index) => `[${index + 1}ターン目] ${item.role === 'ass
           empathyScore: { type: SchemaType.NUMBER },
           paceScore: { type: SchemaType.NUMBER },
           nextStepScore: { type: SchemaType.NUMBER },
-          lengthFeedback: { type: SchemaType.STRING, enum: ["too_short", "too_long", "good"] },
+          lengthFeedback: { type: SchemaType.STRING },
           feedback: { type: SchemaType.STRING },
           improvements: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
           strengths: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
@@ -256,56 +325,39 @@ ${messages.map((item, index) => `[${index + 1}ターン目] ${item.role === 'ass
           nextGoals: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
           partnerTypeTips: { type: SchemaType.STRING },
         },
-        required: ["score", "feedback", "oneFocusImprovement", "nextMessageExample", "goodMoments", "improvementSuggestions"]
-      }
+      },
     },
     safetySettings: [
       { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
       { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-      { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      {
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
       { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-    ]
+    ],
   });
 
   try {
-    const result = await evalModel.generateContent(prompt);
+    const result = await withRetry(() => evalModel.generateContent(prompt));
     const response = result.response;
     const evaluation = JSON.parse(response.text());
-    
-    // 足りない項目がある場合の補完 (安定性)
+
     const normalizedEvaluation: ConversationEvaluation = {
-      score: evaluation.score ?? 70,
-      twoWayScore: evaluation.twoWayScore ?? 60,
-      balanceScore: evaluation.balanceScore ?? 60,
-      connectionScore: evaluation.connectionScore ?? 60,
-      naturalnessScore: evaluation.naturalnessScore ?? 60,
-      curiosityScore: evaluation.curiosityScore ?? 60,
-      selfDisclosureScore: evaluation.selfDisclosureScore ?? 60,
-      empathyScore: evaluation.empathyScore ?? 60,
-      paceScore: evaluation.paceScore ?? 70,
-      nextStepScore: evaluation.nextStepScore ?? 60,
-      lengthFeedback: evaluation.lengthFeedback ?? "good",
-      feedback: evaluation.feedback ?? "会話は良好に進んでいます。",
-      improvements: evaluation.improvements ?? [],
-      strengths: evaluation.strengths ?? [],
-      questionCount: evaluation.questionCount ?? 0,
+      ...defaultEvaluation(messages),
+      ...evaluation,
       totalTurns: messages.length,
-      oneFocusImprovement: evaluation.oneFocusImprovement ?? "相手への興味を示し続けましょう。",
-      nextMessageExample: evaluation.nextMessageExample ?? "楽しそうですね！それについて詳しく教えてください。",
-      goodMoments: evaluation.goodMoments ?? [],
-      improvementSuggestions: evaluation.improvementSuggestions ?? [],
-      nextGoals: evaluation.nextGoals ?? [],
-      partnerTypeTips: evaluation.partnerTypeTips ?? "相手のペースに合わせて会話を広げましょう。",
+      lengthFeedback:
+        evaluation.lengthFeedback === "too_short" ||
+        evaluation.lengthFeedback === "too_long" ||
+        evaluation.lengthFeedback === "good"
+          ? evaluation.lengthFeedback
+          : "good",
     };
 
     return NextResponse.json({ evaluation: normalizedEvaluation });
   } catch (error: any) {
     console.error("Evaluation API Detail Error:", error);
-    
-    // 完全な失敗を避け、何かしらのレスポンスを返す
-    return NextResponse.json({ 
-      error: "Evaluation failed",
-      detail: error.message,
-    }, { status: 500 });
+    return NextResponse.json({ evaluation: defaultEvaluation(messages), fallback: true });
   }
 }
