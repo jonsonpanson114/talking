@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 
-// VAPID設定
 const publicKey = process.env.VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
 
@@ -15,6 +14,13 @@ if (publicKey && privateKey) {
   console.warn("VAPID keys are not configured. Web Push will not work.");
 }
 
+function extractErrorDetail(error: any): string {
+  if (!error) return "unknown";
+  if (typeof error.body === "string") return error.body.slice(0, 300);
+  if (error?.message) return String(error.message).slice(0, 300);
+  return "unknown";
+}
+
 export async function POST(req: NextRequest) {
   let subscriptionData: any = null;
   try {
@@ -23,13 +29,9 @@ export async function POST(req: NextRequest) {
     const data = body.data;
 
     if (!subscriptionData || !subscriptionData.endpoint) {
-      return NextResponse.json(
-        { error: "Subscription is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Subscription is required" }, { status: 400 });
     }
 
-    // 通知送信
     await webpush.sendNotification(
       subscriptionData,
       JSON.stringify({
@@ -49,23 +51,27 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Push send error:", error);
 
-    // Subscriptionが無効な場合
     if ((error.statusCode === 410 || error.statusCode === 404) && subscriptionData?.endpoint) {
-      // GAS側で削除されるはずだが、Vercel側でも期限切れを通知
       return NextResponse.json(
-        { error: "Subscription has expired", code: "EXPIRED" },
+        {
+          error: "Subscription has expired",
+          code: "EXPIRED",
+          detail: extractErrorDetail(error),
+        },
         { status: 410 }
       );
     }
 
     return NextResponse.json(
-      { error: "Failed to send notification" },
+      {
+        error: "Failed to send notification",
+        detail: extractErrorDetail(error),
+      },
       { status: 500 }
     );
   }
 }
 
-// GETリクエストでテスト通知を送信（開発用）
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
@@ -92,10 +98,13 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.json({ success: true, message: "Test notification sent" });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Test push send error:", error);
     return NextResponse.json(
-      { error: "Failed to send test notification" },
+      {
+        error: "Failed to send test notification",
+        detail: extractErrorDetail(error),
+      },
       { status: 500 }
     );
   }
