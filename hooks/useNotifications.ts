@@ -122,7 +122,7 @@ export function useNotifications() {
     saveNotificationSettings(updated);
   }, [settings]);
 
-  const registerPushSubscription = useCallback(async () => {
+  const registerPushSubscription = useCallback(async (forceRenew = false) => {
     if (
       !("serviceWorker" in navigator) ||
       !("PushManager" in window) ||
@@ -139,7 +139,13 @@ export function useNotifications() {
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      const existingSubscription = await registration.pushManager.getSubscription();
+      let existingSubscription = await registration.pushManager.getSubscription();
+
+      if (forceRenew && existingSubscription) {
+        await existingSubscription.unsubscribe();
+        existingSubscription = null;
+        clearPushSubscription();
+      }
 
       const subscription =
         existingSubscription ||

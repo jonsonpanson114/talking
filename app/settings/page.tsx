@@ -72,7 +72,7 @@ export default function SettingsPage() {
 
       if (code === "EXPIRED") {
         clearPushSubscription();
-        const reRegistered = await registerPushSubscription();
+        const reRegistered = await registerPushSubscription(true);
         if (!reRegistered) {
           setTestResult("✗ 購読期限切れ。再登録に失敗しました。通知を一度OFF/ONしてください。");
           return;
