@@ -69,6 +69,12 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
   throw lastError;
 }
 
+function normalizeAssistantResponse(text: string, fallback: string): string {
+  const trimmed = (text || "").trim();
+  if (!trimmed) return fallback;
+  return /[。！？!?]$/.test(trimmed) ? trimmed : `${trimmed}。`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { action, data } = await req.json();
@@ -145,7 +151,10 @@ ${partnerStyle.promptHint}
         "それでは、練習を開始しましょう。最初のメッセージをお願いします。設定に忠実な、自然な第一声をお願いします。"
       )
     );
-    const response = result.response.text();
+    const response = normalizeAssistantResponse(
+      result.response.text(),
+      `はじめまして、${userName}さん。マッチありがとうございます。最近ちょっと気分が上がった出来事ってありましたか？`
+    );
     return NextResponse.json({ response });
   } catch (error) {
     console.error("Start conversation failed:", error);
@@ -205,7 +214,10 @@ ${partnerStyle.promptHint}
     const chat = model.startChat({ history });
     const lastMessage = messages[messages.length - 1].content;
     const result = await withRetry(() => chat.sendMessage(lastMessage));
-    const response = result.response.text();
+    const response = normalizeAssistantResponse(
+      result.response.text(),
+      "なるほど、それはいいですね。もう少し詳しく聞きたいです。特にどんなところが一番印象に残りましたか？"
+    );
 
     return NextResponse.json({ response });
   } catch (error) {

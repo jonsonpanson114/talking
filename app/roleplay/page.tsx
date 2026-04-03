@@ -23,6 +23,22 @@ export default function RoleplayPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [evaluation, setEvaluation] = useState<ConversationEvaluation | null>(null);
 
+  const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 35000) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  const normalizeMessage = (text: string, fallback: string) => {
+    const trimmed = (text || "").trim();
+    if (!trimmed) return fallback;
+    return /[。！？!?]$/.test(trimmed) ? trimmed : `${trimmed}。`;
+  };
+
   const personas = [
     { id: "casual", label: "Casual", description: "リラックス、気さくな感じ" },
     { id: "serious", label: "Serious", description: "誠実、聞き上手" },
@@ -48,7 +64,7 @@ export default function RoleplayPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/ai", {
+      const response = await fetchWithTimeout("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,11 +80,18 @@ export default function RoleplayPage() {
         }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || "start_failed");
+      }
+      const assistantText = normalizeMessage(
+        data?.response,
+        `はじめまして、${settings.userName}さん。最近ちょっと気分が上がった出来事ってありましたか？`
+      );
 
       setMessages([
         {
           role: "assistant",
-          content: data.response,
+          content: assistantText,
           timestamp: new Date(),
         },
       ]);
@@ -95,7 +118,7 @@ export default function RoleplayPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/ai", {
+      const response = await fetchWithTimeout("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,12 +134,19 @@ export default function RoleplayPage() {
         }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || "continue_failed");
+      }
+      const assistantText = normalizeMessage(
+        data?.response,
+        "なるほど、それはいいですね。もう少し詳しく聞いてもいいですか？"
+      );
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.response,
+          content: assistantText,
           timestamp: new Date(),
         },
       ]);
@@ -137,7 +167,7 @@ export default function RoleplayPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/ai", {
+      const response = await fetchWithTimeout("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,6 +182,9 @@ export default function RoleplayPage() {
         }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.detail || data?.error || "evaluate_failed");
+      }
 
       if (data.evaluation) {
         setEvaluation(data.evaluation);
