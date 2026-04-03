@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
-import { deleteSubscription } from "@/lib/kv";
 
 // VAPID設定
 const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -52,13 +51,7 @@ export async function POST(req: NextRequest) {
 
     // Subscriptionが無効な場合
     if ((error.statusCode === 410 || error.statusCode === 404) && subscriptionData?.endpoint) {
-      // KVからも削除
-      try {
-        await deleteSubscription(subscriptionData.endpoint);
-      } catch (kvError) {
-        console.error("Failed to delete expired subscription from KV:", kvError);
-      }
-      
+      // GAS側で削除されるはずだが、Vercel側でも期限切れを通知
       return NextResponse.json(
         { error: "Subscription has expired", code: "EXPIRED" },
         { status: 410 }

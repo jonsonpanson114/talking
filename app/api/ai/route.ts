@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI, Content, Part, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { GoogleGenerativeAI, Content, HarmCategory, HarmBlockThreshold, SchemaType } from "@google/generative-ai";
 import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, PartnerStyleId, RoleplayScenarioId } from "@/lib/types";
 
-// Gemini API の初期化
+// Gemini API の初期化 (Version 3.1 Standard準拠)
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// システム指示に基づいた動的なモデル取得
+// システム指示に基づいた動的なモデル取得 (gemini-3-flash-preview を使用)
 function getDynamicModel(systemPrompt: string) {
   return genAI.getGenerativeModel({ 
     model: "gemini-3-flash-preview", 
@@ -15,7 +15,7 @@ function getDynamicModel(systemPrompt: string) {
       parts: [{ text: systemPrompt }]
     },
     generationConfig: {
-      temperature: 0.7, // 安定性と人間らしさのバランスを調整
+      temperature: 0.7,
       topP: 0.95,
       topK: 40,
       maxOutputTokens: 1000,
@@ -38,6 +38,14 @@ export async function POST(req: NextRequest) {
   try {
     const { action, data } = await req.json();
 
+    if (!apiKey) {
+      console.error("API Key is missing in environment variables.");
+      return NextResponse.json({ 
+        error: "API Key not configured", 
+        detail: "Vercelの環境変数 GEMINI_API_KEY を設定してください。" 
+      }, { status: 500 });
+    }
+
     switch (action) {
       case "start":
         return await handleStartConversation(data);
@@ -48,9 +56,12 @@ export async function POST(req: NextRequest) {
       default:
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
-  } catch (error) {
-    console.error("AI API error:", error);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+  } catch (error: any) {
+    console.error("AI API top-level error:", error);
+    return NextResponse.json({ 
+      error: "Failed to process request",
+      detail: error.message 
+    }, { status: 500 });
   }
 }
 
@@ -98,10 +109,9 @@ ${partnerStyle.promptHint}
 
   const model = getDynamicModel(systemPrompt);
   
-  // 開始メッセージの生成
   const result = await model.generateContent("それでは、練習を開始しましょう。最初のメッセージをお願いします。設定に忠実な、自然な第一声をお願いします。");
-  
   const response = result.response;
+  
   return NextResponse.json({
     response: response.text(),
   });
@@ -142,7 +152,6 @@ ${partnerStyle.promptHint}
 
   const model = getDynamicModel(systemPrompt);
 
-  // 履歴の変換 (Gemini 形式: user と model のみ)
   const rawHistory: Content[] = messages.slice(0, -1).map(msg => ({
     role: msg.role === "assistant" ? "model" : "user",
     parts: [{ text: msg.content }],
@@ -167,51 +176,9 @@ ${partnerStyle.promptHint}
   });
 }
 
-function clampScore(value: unknown, fallback = 60) {
-  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function normalizeEvaluation(raw: any): ConversationEvaluation {
-  return {
-    score: clampScore(raw.score, 65),
-    twoWayScore: clampScore(raw.twoWayScore, 60),
-    balanceScore: clampScore(raw.balanceScore, 60),
-    connectionScore: clampScore(raw.connectionScore, 60),
-    naturalnessScore: clampScore(raw.naturalnessScore, 60),
-    curiosityScore: clampScore(raw.curiosityScore, 60),
-    selfDisclosureScore: clampScore(raw.selfDisclosureScore, 60),
-    empathyScore: clampScore(raw.empathyScore, 60),
-    paceScore: clampScore(raw.paceScore, 60),
-    nextStepScore: clampScore(raw.nextStepScore, 60),
-    lengthFeedback:
-      raw.lengthFeedback === "too_short" || raw.lengthFeedback === "too_long"
-        ? raw.lengthFeedback
-        : "good",
-    feedback: typeof raw.feedback === "string" ? raw.feedback : "会話は全体として自然に進んでいます。",
-    improvements: Array.isArray(raw.improvements) ? (raw.improvements as string[]).slice(0, 3) : [],
-    strengths: Array.isArray(raw.strengths) ? (raw.strengths as string[]).slice(0, 3) : [],
-    questionCount: typeof raw.questionCount === "number" ? raw.questionCount : 0,
-    totalTurns: typeof raw.totalTurns === "number" ? raw.totalTurns : 0,
-    oneFocusImprovement:
-      typeof raw.oneFocusImprovement === "string"
-        ? raw.oneFocusImprovement
-        : "次の返答で、相手への質問を1つだけ追加する",
-    nextMessageExample:
-      typeof raw.nextMessageExample === "string"
-        ? raw.nextMessageExample
-        : "それいいですね。ちなみに、最近ハマってることってありますか？",
-    goodMoments: Array.isArray(raw.goodMoments)
-      ? (raw.goodMoments as ConversationEvaluation["goodMoments"]).slice(0, 3)
-      : [],
-    improvementSuggestions: Array.isArray(raw.improvementSuggestions)
-      ? (raw.improvementSuggestions as ConversationEvaluation["improvementSuggestions"]).slice(0, 3)
-      : [],
-    nextGoals: Array.isArray(raw.nextGoals) ? (raw.nextGoals as string[]).slice(0, 3) : [],
-    partnerTypeTips: typeof raw.partnerTypeTips === "string" ? raw.partnerTypeTips : "短文で返しても、相手に一つ質問を添えると会話が続きます。",
-  };
-}
-
+/**
+ * 学習用: 会話の評価 (Response Schema 強制 Version 3.1)
+ */
 async function handleEvaluateConversation(data: {
   messages: Array<{ role: string; content: string }>;
   userName: string;
@@ -228,54 +195,70 @@ async function handleEvaluateConversation(data: {
 あなたは出会い前コミュニケーションのコーチです。
 ユーザー「${userName}」と相手「${partnerName}」の会話を、以下シナリオ前提で評価してください。
 
-シナリオ: ${scenario.label}
-背景: ${scenario.context}
-目標: ${scenario.objective}
-相手タイプ: ${partnerStyle.label}（${partnerStyle.description}）
-
-評価基準:
-1. curiosityScore: 質問の質・興味の示し方
-2. selfDisclosureScore: 自己開示の自然さ
-3. empathyScore: 共感の伝え方
-4. paceScore: 押しすぎないテンポ
-5. nextStepScore: 次につなぐ会話運び
-6. twoWayScore, balanceScore, connectionScore, naturalnessScoreも評価
-
-必ず以下のJSONのみを返してください。マークダウンの囲み（\`\`\`json）は不要です。
-
-{
-  "score": 0-100,
-  "twoWayScore": 0-100,
-  "balanceScore": 0-100,
-  "connectionScore": 0-100,
-  "naturalnessScore": 0-100,
-  "curiosityScore": 0-100,
-  "selfDisclosureScore": 0-100,
-  "empathyScore": 0-100,
-  "paceScore": 0-100,
-  "nextStepScore": 0-100,
-  "lengthFeedback": "too_short" | "too_long" | "good",
-  "feedback": "全体講評",
-  "improvements": ["改善点"],
-  "strengths": ["良かった点"],
-  "questionCount": number,
-  "totalTurns": number,
-  "oneFocusImprovement": "次回最優先で直す1つ",
-  "nextMessageExample": "次回そのまま使える自然な一言",
-  "goodMoments": [{"turn": number, "quote": "引用", "reason": "理由"}],
-  "improvementSuggestions": [{"turn": number, "original": "元", "better": "改善例", "reason": "理由"}],
-  "nextGoals": ["次回目標"],
-  "partnerTypeTips": "相手タイプに合わせたコツ"
-}
+シチュエーション: ${scenario.label}
+相手タイプ: ${partnerStyle.label} （${partnerStyle.description}）
 
 会話ログ:
-${messages.map((item, index) => `[${index + 1}ターン目] ${item.role}: ${item.content}`).join("\n")}
+${messages.map((item, index) => `[${index + 1}ターン目] ${item.role === 'assistant' ? partnerName : userName}: ${item.content}`).join("\n")}
 `;
 
-  // 評価用に、より安定した設定（temperature: 0）と緩和されたセーフティ設定を使用
+  // Response Schema の定義 (最先端)
   const evalModel = genAI.getGenerativeModel({ 
     model: "gemini-3-flash-preview",
-    generationConfig: { temperature: 0 },
+    systemInstruction: {
+      parts: [{ text: "あなたはプロの会話コーチです。提示された会話ログを分析し、ユーザーに対する具体的なフィードバックをJSON形式で返してください。スコアは厳格に付け、改善点は具体的かつ実行可能なものにしてください。" }]
+    },
+    generationConfig: { 
+      temperature: 0.1,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: SchemaType.OBJECT,
+        properties: {
+          score: { type: SchemaType.NUMBER },
+          twoWayScore: { type: SchemaType.NUMBER },
+          balanceScore: { type: SchemaType.NUMBER },
+          connectionScore: { type: SchemaType.NUMBER },
+          naturalnessScore: { type: SchemaType.NUMBER },
+          curiosityScore: { type: SchemaType.NUMBER },
+          selfDisclosureScore: { type: SchemaType.NUMBER },
+          empathyScore: { type: SchemaType.NUMBER },
+          paceScore: { type: SchemaType.NUMBER },
+          nextStepScore: { type: SchemaType.NUMBER },
+          lengthFeedback: { type: SchemaType.STRING, enum: ["too_short", "too_long", "good"] },
+          feedback: { type: SchemaType.STRING },
+          improvements: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          strengths: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          oneFocusImprovement: { type: SchemaType.STRING },
+          nextMessageExample: { type: SchemaType.STRING },
+          goodMoments: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                turn: { type: SchemaType.NUMBER },
+                quote: { type: SchemaType.STRING },
+                reason: { type: SchemaType.STRING },
+              },
+            },
+          },
+          improvementSuggestions: {
+            type: SchemaType.ARRAY,
+            items: {
+              type: SchemaType.OBJECT,
+              properties: {
+                turn: { type: SchemaType.NUMBER },
+                original: { type: SchemaType.STRING },
+                better: { type: SchemaType.STRING },
+                reason: { type: SchemaType.STRING },
+              },
+            },
+          },
+          nextGoals: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } },
+          partnerTypeTips: { type: SchemaType.STRING },
+        },
+        required: ["score", "feedback", "oneFocusImprovement", "nextMessageExample", "goodMoments", "improvementSuggestions"]
+      }
+    },
     safetySettings: [
       { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
       { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -287,38 +270,42 @@ ${messages.map((item, index) => `[${index + 1}ターン目] ${item.role}: ${item
   try {
     const result = await evalModel.generateContent(prompt);
     const response = result.response;
+    const evaluation = JSON.parse(response.text());
     
-    let responseText = "";
-    try {
-      responseText = response.text();
-    } catch (e) {
-      console.error("Safety block or other issue getting response text:", e);
-      // フォールバック: 理由を確認
-      const candidate = response.candidates?.[0];
-      if (candidate?.finishReason === "SAFETY") {
-        throw new Error("Evaluation blocked by safety filters. Please try a cleaner conversation.");
-      }
-      throw e;
-    }
+    // 足りない項目がある場合の補完 (安定性)
+    const normalizedEvaluation: ConversationEvaluation = {
+      score: evaluation.score ?? 70,
+      twoWayScore: evaluation.twoWayScore ?? 60,
+      balanceScore: evaluation.balanceScore ?? 60,
+      connectionScore: evaluation.connectionScore ?? 60,
+      naturalnessScore: evaluation.naturalnessScore ?? 60,
+      curiosityScore: evaluation.curiosityScore ?? 60,
+      selfDisclosureScore: evaluation.selfDisclosureScore ?? 60,
+      empathyScore: evaluation.empathyScore ?? 60,
+      paceScore: evaluation.paceScore ?? 70,
+      nextStepScore: evaluation.nextStepScore ?? 60,
+      lengthFeedback: evaluation.lengthFeedback ?? "good",
+      feedback: evaluation.feedback ?? "会話は良好に進んでいます。",
+      improvements: evaluation.improvements ?? [],
+      strengths: evaluation.strengths ?? [],
+      questionCount: evaluation.questionCount ?? 0,
+      totalTurns: messages.length,
+      oneFocusImprovement: evaluation.oneFocusImprovement ?? "相手への興味を示し続けましょう。",
+      nextMessageExample: evaluation.nextMessageExample ?? "楽しそうですね！それについて詳しく教えてください。",
+      goodMoments: evaluation.goodMoments ?? [],
+      improvementSuggestions: evaluation.improvementSuggestions ?? [],
+      nextGoals: evaluation.nextGoals ?? [],
+      partnerTypeTips: evaluation.partnerTypeTips ?? "相手のペースに合わせて会話を広げましょう。",
+    };
 
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("No JSON found in response:", responseText);
-      throw new Error("Failed to find JSON in AI response");
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    const evaluation = normalizeEvaluation(parsed);
-    return NextResponse.json({ evaluation });
+    return NextResponse.json({ evaluation: normalizedEvaluation });
   } catch (error: any) {
-    console.error("Evaluation API detail error:", {
-      message: error.message,
-      stack: error.stack,
-      response: error.response?.text ? await error.response.text() : "N/A"
-    });
+    console.error("Evaluation API Detail Error:", error);
+    
+    // 完全な失敗を避け、何かしらのレスポンスを返す
     return NextResponse.json({ 
-      error: "Failed to evaluate conversation",
-      detail: error.message 
+      error: "Evaluation failed",
+      detail: error.message,
     }, { status: 500 });
   }
 }
