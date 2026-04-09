@@ -1,142 +1,243 @@
 /**
  * Web Push Notification Storage and Scheduler for "Talking" App
- * 
+ *
  * 1. GASプロジェクトに貼り付けてください
  * 2. 公開 > ウェブアプリとしてデプロイ (アクセス制限: 全員)
  * 3. デプロイURLを Vercelの GAS_WEBHOOK_URL に設定
- * 4. checkAndSendPushes を1分〜5分ごとの時限トリガーに設定
+ * 4. checkAndSendPushes を5分ごとの時限トリガーに設定
  */
 
 const VERBOSE_LOGGING = true;
-const VERCEL_SEND_API = "https://your-app.vercel.app/api/push/send"; // ← あなたのアプリのURLに書き換えてください
-const SECRET_TOKEN = "your-secret-token"; // 必要なら追加の認証用
+const VERCEL_SEND_API = "https://talking-rosy.vercel.app/api/push/send";
+const MAX_BATCH_PER_RUN = 25;
+const SEND_WINDOW_MINUTES = 2;
+
+const SHEET_NAME = "Subscriptions";
+const HEADER = [
+  "Endpoint",
+  "Subscription JSON",
+  "Hour",
+  "Minute",
+  "Enabled",
+  "Last Updated",
+  "User Agent",
+  "Last Notified Key",
+];
+
+function ensureSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(HEADER);
+    return sheet;
+  }
+
+  const firstRow = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADER.length)).getValues()[0];
+  if (firstRow[0] !== "Endpoint") {
+    sheet.clear();
+    sheet.appendRow(HEADER);
+  } else if (sheet.getLastColumn() < HEADER.length) {
+    sheet.getRange(1, 1, 1, HEADER.length).setValues([HEADER]);
+  }
+
+  return sheet;
+}
+
+function safeJsonParse_(text) {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+}
+
+function nowJst_() {
+  return new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+}
+
+function toMinuteKey_(dateObj) {
+  const y = dateObj.getUTCFullYear();
+  const m = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getUTCDate()).padStart(2, "0");
+  const h = String(dateObj.getUTCHours()).padStart(2, "0");
+  const min = String(dateObj.getUTCMinutes()).padStart(2, "0");
+  return `${y}${m}${d}${h}${min}`;
+}
 
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName("Subscriptions");
-    
-    if (!sheet) {
-      sheet = ss.insertSheet("Subscriptions");
-      sheet.appendRow(["Endpoint", "Subscription JSON", "Hour", "Minute", "Enabled", "Last Updated", "User Agent"]);
+    if (!e || !e.postData || !e.postData.contents) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ status: "error", message: "empty body" })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
-    
+
+    const data = safeJsonParse_(e.postData.contents);
+    if (!data) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ status: "error", message: "invalid json" })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const sheet = ensureSheet_();
     const action = data.action;
-    
-    if (action === "subscribe") {
-      const subscription = data.subscription;
-      const settings = data.settings;
-      const subObj = JSON.parse(subscription);
-      const endpoint = subObj.endpoint;
-      
-      const rows = sheet.getDataRange().getValues();
-      let foundIndex = -1;
-      
-      for (let i = 1; i < rows.length; i++) {
-        if (rows[i][0] === endpoint) {
-          foundIndex = i + 1;
-          break;
-        }
-      }
-      
-      const newRow = [
-        endpoint,
-        subscription,
-        settings.hour,
-        settings.minute,
-        settings.enabled ? "TRUE" : "FALSE",
-        new Date().toISOString(),
-        data.userAgent || ""
-      ];
-      
-      if (foundIndex > 0) {
-        sheet.getRange(foundIndex, 1, 1, newRow.length).setValues([newRow]);
-      } else {
-        sheet.appendRow(newRow);
-      }
-      
-      return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
-        .setMimeType(ContentService.MimeType.JSON);
+
+    if (action !== "subscribe") {
+      return ContentService.createTextOutput(
+        JSON.stringify({ status: "error", message: "unknown action" })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
-    
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "unknown action" }))
-      .setMimeType(ContentService.MimeType.JSON);
-      
+
+    const subObj = typeof data.subscription === "string" ? safeJsonParse_(data.subscription) : data.subscription;
+    if (!subObj || !subObj.endpoint) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ status: "error", message: "invalid subscription" })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const endpoint = subObj.endpoint;
+    const settings = data.settings || {};
+
+    const lastRow = sheet.getLastRow();
+    const rows = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, HEADER.length).getValues() : [];
+
+    let foundRow = -1;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i][0] === endpoint) {
+        foundRow = i + 2;
+        break;
+      }
+    }
+
+    const record = [
+      endpoint,
+      JSON.stringify(subObj),
+      Number(settings.hour ?? 20),
+      Number(settings.minute ?? 0),
+      settings.enabled ? "TRUE" : "FALSE",
+      new Date().toISOString(),
+      data.userAgent || "",
+      "",
+    ];
+
+    if (foundRow > 0) {
+      sheet.getRange(foundRow, 1, 1, HEADER.length).setValues([record]);
+    } else {
+      sheet.appendRow(record);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(
+      ContentService.MimeType.JSON
+    );
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ status: "error", message: String(err && err.message ? err.message : err) })
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-/**
- * トリガーで実行：通知が必要なユーザーを探して Vercel API を叩く
- */
 function checkAndSendPushes() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Subscriptions");
-  if (!sheet) return;
-  
-  const now = new Date();
-  // JST (UTC+9) に合わせる
-  const jstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-  const currentHour = now.getHours(); // GASのスクリプトタイムゾーンに依存
-  const currentMinute = now.getMinutes();
-  
-  if (VERBOSE_LOGGING) console.log(`Checking pushes for ${currentHour}:${currentMinute}`);
-  
-  const rows = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < rows.length; i++) {
-    const [endpoint, subJson, hour, minute, enabledStr] = rows[i];
-    const enabled = enabledStr === "TRUE" || enabledStr === true;
-    
-    // 時間が一致し、有効な場合
-    if (enabled && Number(hour) === currentHour && Math.abs(Number(minute) - currentMinute) <= 2) {
-      sendPushViaVercel(subJson);
-      // 連続で送らないために少し間隔を開けるか、送信済みフラグを管理しても良い
-    }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) {
+    if (VERBOSE_LOGGING) console.log("skip: another run is in progress");
+    return;
   }
-}
 
-function sendPushViaVercel(subscriptionJson) {
-  const options = {
-    method: "POST",
-    contentType: "application/json",
-    payload: JSON.stringify({
-      subscription: JSON.parse(subscriptionJson),
-      data: {
-        title: "Talking - 練習の時間です！",
-        body: "今日も5分間、自分磨きの会話練習をしましょう。",
-        url: "/roleplay"
-      }
-    }),
-    muteHttpExceptions: true
-  };
-  
   try {
-    const response = UrlFetchApp.fetch(VERCEL_SEND_API, options);
-    const code = response.getResponseCode();
-    if (VERBOSE_LOGGING) console.log(`Sent to ${VERCEL_SEND_API}: ${code} - ${response.getContentText()}`);
-    
-    // 期限切れ (410) の場合はシートから削除してもよい
-    if (code === 410) {
-      cleanupExpiredSubscription(JSON.parse(subscriptionJson).endpoint);
-    }
-  } catch (e) {
-    console.error("Fetch error: " + e.message);
-  }
-}
+    const sheet = ensureSheet_();
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return;
 
-function cleanupExpiredSubscription(endpoint) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("Subscriptions");
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === endpoint) {
-      sheet.deleteRow(i + 1);
-      console.log(`Cleaned up expired subscription: ${endpoint}`);
-      break;
+    const rows = sheet.getRange(2, 1, lastRow - 1, HEADER.length).getValues();
+
+    const jst = nowJst_();
+    const currentHour = jst.getUTCHours();
+    const currentMinute = jst.getUTCMinutes();
+    const minuteKey = toMinuteKey_(jst);
+
+    if (VERBOSE_LOGGING) {
+      console.log(`checkAndSendPushes start JST=${currentHour}:${String(currentMinute).padStart(2, "0")}`);
     }
+
+    const targets = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const endpoint = row[0];
+      const subJson = row[1];
+      const hour = Number(row[2]);
+      const minute = Number(row[3]);
+      const enabled = row[4] === "TRUE" || row[4] === true;
+      const lastNotifiedKey = String(row[7] || "");
+
+      if (!enabled) continue;
+      if (!endpoint || !subJson) continue;
+
+      const minuteDiff = Math.abs(minute - currentMinute);
+      if (hour !== currentHour || minuteDiff > SEND_WINDOW_MINUTES) continue;
+
+      // 同じ分に複数回送らない
+      if (lastNotifiedKey === minuteKey) continue;
+
+      const parsed = safeJsonParse_(subJson);
+      if (!parsed || !parsed.endpoint) {
+        continue;
+      }
+
+      targets.push({ sheetRow: i + 2, endpoint, subscription: parsed });
+      if (targets.length >= MAX_BATCH_PER_RUN) break;
+    }
+
+    if (targets.length === 0) {
+      if (VERBOSE_LOGGING) console.log("No targets found");
+      return;
+    }
+
+    const requests = targets.map((t) => ({
+      url: VERCEL_SEND_API,
+      method: "post",
+      contentType: "application/json",
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        subscription: t.subscription,
+        data: {
+          title: "Talking - 練習の時間です！",
+          body: "今日も5分間、自分磨きの会話練習をしましょう。",
+          url: "/roleplay",
+        },
+      }),
+    }));
+
+    const responses = UrlFetchApp.fetchAll(requests);
+    const rowsToDelete = [];
+
+    responses.forEach((res, idx) => {
+      const code = res.getResponseCode();
+      const target = targets[idx];
+      const body = res.getContentText();
+
+      if (VERBOSE_LOGGING) {
+        console.log(`send row=${target.sheetRow} code=${code} endpoint=${target.endpoint}`);
+      }
+
+      if (code === 200) {
+        sheet.getRange(target.sheetRow, 8).setValue(minuteKey);
+      } else if (code === 410 || code === 404) {
+        rowsToDelete.push(target.sheetRow);
+      } else {
+        // 送信失敗時でもループは継続。必要ならログだけ残す。
+        console.log(`send failed code=${code} body=${body}`);
+      }
+    });
+
+    // 行削除は下から
+    rowsToDelete.sort((a, b) => b - a).forEach((r) => sheet.deleteRow(r));
+  } catch (e) {
+    console.error(`checkAndSendPushes fatal: ${e && e.message ? e.message : e}`);
+    throw e;
+  } finally {
+    lock.releaseLock();
   }
 }
