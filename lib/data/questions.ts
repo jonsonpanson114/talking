@@ -324,6 +324,46 @@ export const presets = {
   "二択クイズ8問（会話用）": questions.filter(q =>
     q.type === "this_or_that"
   ),
+  "マッチ直後の会話づくり": questions.filter((q) =>
+    [
+      "casual-001",
+      "casual-003",
+      "casual-005",
+      "hobby-001",
+      "hobby-002",
+      "weekend-001",
+    ].includes(q.id)
+  ),
+  "初デート前の安心づくり": questions.filter((q) =>
+    [
+      "food-004",
+      "weekend-004",
+      "travel-005",
+      "casual-002",
+      "hobby-003",
+      "food-003",
+    ].includes(q.id)
+  ),
+  "日程調整で困らない話題": questions.filter((q) =>
+    [
+      "food-004",
+      "weekend-001",
+      "weekend-002",
+      "travel-001",
+      "hobby-003",
+      "food-003",
+    ].includes(q.id)
+  ),
+  "返信が止まった後の再開": questions.filter((q) =>
+    [
+      "casual-001",
+      "casual-004",
+      "hobby-001",
+      "travel-002",
+      "weekend-004",
+      "food-005",
+    ].includes(q.id)
+  ),
 };
 
 export const categories = [

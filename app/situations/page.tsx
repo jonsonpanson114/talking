@@ -1,11 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Home, Heart, Search, ChevronRight, Sparkles, ChevronLeft } from "lucide-react";
+import { Heart, Search, ChevronRight, Sparkles, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { questions, categories, presets } from "@/lib/data/questions";
 import { useLocalStorage } from "@/hooks";
 import Link from "next/link";
+
+const realWorldPacks = [
+  {
+    title: "マッチ直後",
+    preset: "マッチ直後の会話づくり",
+    description: "最初の数往復で、安心感と興味を両立させる。",
+  },
+  {
+    title: "日程調整",
+    preset: "日程調整で困らない話題",
+    description: "予定の話だけで終わらず、軽く会話の温度を上げる。",
+  },
+  {
+    title: "会う前日",
+    preset: "初デート前の安心づくり",
+    description: "確認メッセージを会話の種にも変える。",
+  },
+  {
+    title: "再開メッセージ",
+    preset: "返信が止まった後の再開",
+    description: "気まずさを重くせず、自然に戻す。",
+  },
+];
 
 export default function SituationsPage() {
   const { progress, toggleFavorite, isFavorite } = useLocalStorage();
@@ -80,6 +103,28 @@ export default function SituationsPage() {
 
       <main className="relative px-4 sm:px-6 pb-12 sm:pb-16 max-w-3xl mx-auto space-y-4 sm:space-y-8">
         <div className="space-y-4 sm:space-y-8">
+          <div className="space-y-2 sm:space-y-4">
+            <label className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] font-bold text-white/10 ml-2">Real-world packs</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              {realWorldPacks.map((pack) => (
+                <button
+                  key={pack.preset}
+                  onClick={() => {
+                    setSelectedPreset(pack.preset);
+                    setSelectedCategory("all");
+                    setSearchQuery("");
+                  }}
+                  className={`glass-card p-4 sm:p-5 text-left transition-all duration-300 ${
+                    selectedPreset === pack.preset ? "bg-white/[0.08] ring-1 ring-white/20" : "hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-white/30 font-bold">{pack.title}</p>
+                  <p className="mt-2 text-sm sm:text-base text-white/85">{pack.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 検索エリア */}
           <div className="relative group">
             <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/20 group-focus-within:text-white/60 transition-colors" />

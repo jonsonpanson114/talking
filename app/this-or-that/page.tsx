@@ -1,37 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Home, RotateCcw, ChevronRight, Sparkles, ArrowRight, ChevronLeft, Target } from "lucide-react";
+import { RotateCcw, Sparkles, ArrowRight, ChevronLeft, Target, HeartHandshake, Compass } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { thisOrThatQuestions } from "@/lib/data/thisOrThatQuestions";
 import Link from "next/link";
-
-type ChoiceSide = "this" | "that";
-
-interface ChoiceHistory {
-  questionId: string;
-  axis: string;
-  side: ChoiceSide;
-}
-
-interface AxisInsight {
-  axis: string;
-  thisCount: number;
-  thatCount: number;
-  total: number;
-  thisRate: number;
-  thatRate: number;
-  dominant: string;
-  confidence: number;
-}
-
-interface SavedState {
-  currentIndex: number;
-  history: ChoiceHistory[];
-  isFinished: boolean;
-}
-
-const STORAGE_KEY = "this-or-that-progress-v1";
+import {
+  AxisInsight,
+  ChoiceHistory,
+  ChoiceSide,
+  THIS_OR_THAT_STORAGE_KEY,
+  SavedThisOrThatState,
+  buildAxisInsights,
+  buildThisOrThatProfile,
+} from "@/lib/thisOrThatProfile";
 
 export default function ThisOrThatPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -41,10 +23,10 @@ export default function ThisOrThatPage() {
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.localStorage.getItem(THIS_OR_THAT_STORAGE_KEY);
       if (!raw) return;
 
-      const parsed = JSON.parse(raw) as Partial<SavedState>;
+      const parsed = JSON.parse(raw) as Partial<SavedThisOrThatState>;
       const safeIndex =
         typeof parsed.currentIndex === "number"
           ? Math.max(0, Math.min(parsed.currentIndex, totalQuestions - 1))
@@ -60,8 +42,8 @@ export default function ThisOrThatPage() {
   }, [totalQuestions]);
 
   useEffect(() => {
-    const payload: SavedState = { currentIndex, history, isFinished };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    const payload: SavedThisOrThatState = { currentIndex, history, isFinished };
+    window.localStorage.setItem(THIS_OR_THAT_STORAGE_KEY, JSON.stringify(payload));
   }, [currentIndex, history, isFinished]);
 
   const currentQuestion = thisOrThatQuestions[currentIndex];
@@ -114,51 +96,14 @@ export default function ThisOrThatPage() {
     setCurrentIndex(0);
     setHistory([]);
     setIsFinished(false);
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(THIS_OR_THAT_STORAGE_KEY);
   };
 
   const completed = history.length === totalQuestions;
   const showResult = completed || isFinished;
 
-  const insights = useMemo<AxisInsight[]>(() => {
-    if (history.length === 0) return [];
-
-    const axisMeta = new Map(
-      thisOrThatQuestions.map((q) => [q.axis, { thisTendency: q.thisTendency, thatTendency: q.thatTendency }])
-    );
-
-    const grouped = new Map<string, { thisCount: number; thatCount: number; total: number }>();
-
-    for (const answer of history) {
-      const current = grouped.get(answer.axis) ?? { thisCount: 0, thatCount: 0, total: 0 };
-      const next = {
-        thisCount: current.thisCount + (answer.side === "this" ? 1 : 0),
-        thatCount: current.thatCount + (answer.side === "that" ? 1 : 0),
-        total: current.total + 1,
-      };
-      grouped.set(answer.axis, next);
-    }
-
-    return Array.from(grouped.entries())
-      .map(([axis, counts]) => {
-        const meta = axisMeta.get(axis);
-        const thisRate = Math.round((counts.thisCount / counts.total) * 100);
-        const thatRate = Math.round((counts.thatCount / counts.total) * 100);
-        const thisWins = thisRate >= thatRate;
-
-        return {
-          axis,
-          thisCount: counts.thisCount,
-          thatCount: counts.thatCount,
-          total: counts.total,
-          thisRate,
-          thatRate,
-          dominant: thisWins ? meta?.thisTendency ?? "未定義" : meta?.thatTendency ?? "未定義",
-          confidence: Math.abs(thisRate - thatRate),
-        };
-      })
-      .sort((a, b) => b.confidence - a.confidence);
-  }, [history]);
+  const insights = useMemo<AxisInsight[]>(() => buildAxisInsights(history), [history]);
+  const profile = useMemo(() => buildThisOrThatProfile(history), [history]);
 
   const strongTrends = insights.filter((item) => item.confidence >= 20).slice(0, 3);
 
@@ -205,6 +150,9 @@ export default function ThisOrThatPage() {
                 <h1 className="text-xl sm:text-5xl font-bold tracking-tight px-2 sm:px-4 leading-[1.2]">
                   {currentQuestion.text}
                 </h1>
+                <p className="mt-4 text-xs sm:text-sm text-white/40">
+                  今の自分の正解を選べば大丈夫です。全部やり切らなくても、途中の傾向からかなり見えてきます。
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2 sm:pt-6">
@@ -292,9 +240,46 @@ export default function ThisOrThatPage() {
               <div className="text-center">
                 <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] font-bold text-white/20 mb-2 sm:mb-4 block">Psychometric Profile</span>
                 <h1 className="text-3xl sm:text-7xl font-bold tracking-tighter">Vibration Profile</h1>
+                <p className="mt-4 text-sm sm:text-base text-white/40">
+                  好みの集計ではなく、会話や出会いで出やすい自分の傾向として読める形にしています。
+                </p>
               </div>
 
-              {/* 主要な傾向 */}
+              {profile && (
+                <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-6 sm:gap-8">
+                  <div className="glass-card p-6 sm:p-8 bg-white/[0.04]">
+                    <div className="flex items-center gap-3 mb-5">
+                      <HeartHandshake className="w-4 h-4 text-white/40" />
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40">Conversation Archetype</p>
+                    </div>
+                    <h2 className="text-2xl sm:text-4xl leading-tight">{profile.archetype}</h2>
+                    <p className="mt-4 text-sm sm:text-base leading-7 text-white/65">{profile.summary}</p>
+                    <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">恋愛・出会いでの活かし方</p>
+                      <p className="mt-3 text-sm leading-7 text-white/70">{profile.datingAdvice}</p>
+                    </div>
+                  </div>
+
+                  <div className="glass-card p-6 sm:p-8">
+                    <div className="flex items-center gap-3 mb-5">
+                      <Compass className="w-4 h-4 text-white/40" />
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40">Next Best Practice</p>
+                    </div>
+                    <p className="text-xl sm:text-3xl leading-tight">{profile.recommendedScenarioLabel}</p>
+                    <p className="mt-4 text-sm leading-7 text-white/60">
+                      いまの傾向だと、この場面を練習すると実戦に直結しやすいです。
+                    </p>
+                    <Link
+                      href={`/roleplay?scenario=${profile.recommendedScenarioId}`}
+                      className="btn-primary mt-6 inline-flex w-full items-center justify-center gap-2 py-4 text-[11px] uppercase tracking-widest"
+                    >
+                      この場面を練習する
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                 <div className="glass-card p-6 sm:p-10 bg-white/[0.03]">
                   <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
@@ -317,35 +302,74 @@ export default function ThisOrThatPage() {
                   </div>
                 </div>
 
-                <div className="space-y-6 sm:space-y-8">
+                {profile && (
                   <div className="glass-card p-6 sm:p-8">
-                    <h3 className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-white/20 mb-6 sm:mb-8 text-center sm:text-left">Detailed Spectrum</h3>
-                    <div className="space-y-8 sm:space-y-10">
-                      {insights.map((item) => (
-                        <div key={item.axis} className="space-y-3 sm:space-y-4">
-                          <div className="flex justify-between items-end">
-                            <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-white/20">{item.axis}</span>
-                            <span className="text-lg sm:text-xl font-bold tracking-tighter">{Math.max(item.thisRate, item.thatRate)}%</span>
-                          </div>
-                          <div className="h-1 glass rounded-full overflow-hidden relative">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${item.thisRate}%` }}
-                              transition={{ duration: 1.5, ease: "easeOut" }}
-                              className="h-full bg-white absolute left-0"
-                            />
-                            <div className="w-[1px] h-full bg-white/10 absolute left-1/2" />
-                          </div>
-                          <div className="flex justify-between text-[8px] sm:text-[9px] uppercase tracking-widest text-white/40 font-bold">
-                            <span className={item.thisRate >= 50 ? "text-white/80" : ""}>{thisOrThatQuestions.find(q => q.axis === item.axis)?.thisTendency}</span>
-                            <span className={item.thatRate >= 50 ? "text-white/80" : ""}>{thisOrThatQuestions.find(q => q.axis === item.axis)?.thatTendency}</span>
-                          </div>
+                    <h3 className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-white/20 mb-6 sm:mb-8 text-center sm:text-left">Dating Translation</h3>
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-3">強み</p>
+                        <div className="space-y-2">
+                          {profile.strengths.map((strength) => (
+                            <div key={strength} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/75">
+                              {strength}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-3">気をつけたい癖</p>
+                        <div className="space-y-2">
+                          {profile.cautions.map((caution) => (
+                            <div key={caution} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/60">
+                              {caution}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                )}
+              </div>
+
+              <div className="glass-card p-6 sm:p-8">
+                <h3 className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-white/20 mb-6 sm:mb-8 text-center sm:text-left">Detailed Spectrum</h3>
+                <div className="space-y-8 sm:space-y-10">
+                  {insights.map((item) => (
+                    <div key={item.axis} className="space-y-3 sm:space-y-4">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-white/20">{item.axis}</span>
+                        <span className="text-lg sm:text-xl font-bold tracking-tighter">{Math.max(item.thisRate, item.thatRate)}%</span>
+                      </div>
+                      <div className="h-1 glass rounded-full overflow-hidden relative">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${item.thisRate}%` }}
+                          transition={{ duration: 1.5, ease: "easeOut" }}
+                          className="h-full bg-white absolute left-0"
+                        />
+                        <div className="w-[1px] h-full bg-white/10 absolute left-1/2" />
+                      </div>
+                      <div className="flex justify-between text-[8px] sm:text-[9px] uppercase tracking-widest text-white/40 font-bold">
+                        <span className={item.thisRate >= 50 ? "text-white/80" : ""}>{item.thisTendency}</span>
+                        <span className={item.thatRate >= 50 ? "text-white/80" : ""}>{item.thatTendency}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {profile && (
+                <div className="glass-card p-6 sm:p-8">
+                  <h3 className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-white/20 mb-6">すぐ使える出だし</h3>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {profile.suggestedOpeners.map((opener) => (
+                      <div key={opener} className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-white/70">
+                        {opener}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
                 {!completed && (

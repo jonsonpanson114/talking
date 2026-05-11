@@ -3,24 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --background: 240 10% 3.9%;
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --background: 255 30% 9%;
   --foreground: 0 0% 98%;
-  --card: 240 10% 9%;
+  --card: 255 22% 13%;
   --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
+  --popover: 255 30% 9%;
   --popover-foreground: 0 0% 98%;
   --primary: 0 0% 98%;
   --primary-foreground: 240 5.9% 10%;
-  --secondary: 240 3.7% 15.9%;
+  --secondary: 255 18% 17%;
   --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 262 83% 58%; /* 深みのあるパープル */
+  --muted: 255 18% 17%;
+  --muted-foreground: 24 18% 70%;
+  --accent: 23 93% 71%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
+  --border: 255 16% 22%;
+  --input: 255 16% 22%;
   --ring: 240 4.9% 83.9%;
 }
 
@@ -31,24 +33,33 @@
 
   html {
     scroll-behavior: smooth;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
   body {
     @apply bg-black text-white antialiased;
-    background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000 100%);
+    background:
+      radial-gradient(circle at top, rgba(255, 182, 120, 0.14), transparent 24%),
+      radial-gradient(circle at 15% 20%, rgba(255, 120, 92, 0.12), transparent 28%),
+      radial-gradient(circle at 85% 12%, rgba(119, 92, 255, 0.14), transparent 24%),
+      linear-gradient(180deg, #120f1f 0%, #171226 38%, #0d0b16 100%);
     min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight text-white;
+    @apply tracking-tight text-white;
+    font-family: var(--font-display), Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.03em;
   }
 }
 
 @layer components {
-  /* 洗練されたグラスモーフィズム */
   .glass {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl;
+    @apply backdrop-blur-xl border shadow-2xl;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(3, 3, 10, 0.35);
   }
 
   .glass-card {
@@ -56,13 +67,20 @@
   }
 
   .glass-card:hover {
-    @apply bg-white/[0.06] border-white/[0.12] -translate-y-1;
+    @apply -translate-y-1;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
+    border-color: rgba(255, 244, 226, 0.14);
   }
 
-  /* エレガントなボタン */
   .btn-primary {
     @apply relative overflow-hidden px-6 py-3.5 rounded-2xl font-semibold transition-all duration-300
-           bg-white text-black hover:bg-white/90 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)];
+           text-[#140f16] active:scale-95;
+    background: linear-gradient(135deg, #ffd1a1 0%, #fff0d7 55%, #ffc084 100%);
+    box-shadow: 0 12px 40px rgba(255, 193, 133, 0.28);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.03);
   }
 
   .btn-secondary {
@@ -76,19 +94,17 @@
            focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/[0.05] transition-all duration-300;
   }
 
-  /* メッシュグラデーション背景 (より静謐に) */
   .mesh-gradient {
     position: fixed;
     inset: 0;
     z-index: -1;
     background: 
-      radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 100% 100%, rgba(79, 70, 229, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 0% 100%, rgba(124, 58, 237, 0.05) 0%, transparent 40%);
+      radial-gradient(circle at 0% 0%, rgba(255, 170, 118, 0.13) 0%, transparent 36%),
+      radial-gradient(circle at 100% 0%, rgba(166, 136, 255, 0.16) 0%, transparent 34%),
+      radial-gradient(circle at 100% 100%, rgba(255, 109, 81, 0.09) 0%, transparent 36%),
+      radial-gradient(circle at 0% 100%, rgba(244, 223, 180, 0.06) 0%, transparent 30%);
   }
 
-  /* ベントグリッド */
   .bento-grid {
     @apply grid gap-6;
     grid-template-columns: repeat(2, 1fr);
@@ -106,6 +122,46 @@
 }
 
 @layer utilities {
+  .text-ink-soft {
+    color: rgba(255, 243, 229, 0.72);
+  }
+
+  .text-ink-faint {
+    color: rgba(255, 243, 229, 0.48);
+  }
+
+  .text-accent-warm {
+    color: #ffd8af;
+  }
+
+  .border-warm {
+    border-color: rgba(255, 220, 182, 0.18);
+  }
+
+  .bg-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  }
+
+  .ambient-ring {
+    position: relative;
+  }
+
+  .ambient-ring::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 211, 161, 0.38), rgba(145, 140, 255, 0.12), rgba(255, 255, 255, 0.05));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

@@ -139,7 +139,7 @@ async function handleStartConversation(data: {
   scenarioId: RoleplayScenarioId;
   partnerStyleId: PartnerStyleId;
 }) {
-  const { userName, partnerName, persona, scenarioId, partnerStyleId } = data;
+  const { question, userName, partnerName, persona, scenarioId, partnerStyleId } = data;
 
   const scenario = resolveScenario(scenarioId);
   const partnerStyle = resolvePartnerStyle(partnerStyleId);
@@ -157,6 +157,7 @@ ${partnerStyle.promptHint}
 練習シナリオ: ${scenario.label}
 背景: ${scenario.context}
 練習目標: ${scenario.objective}
+今回の会話で特に意識したい起点テーマ: ${question}
 
 【会話のルール（絶対遵守）】
 1. 設定された性格・口調を徹底し、機械的な敬語に逃げないこと。
@@ -170,7 +171,7 @@ ${partnerStyle.promptHint}
     const model = getDynamicModel(systemPrompt);
     const result = await withRetry(() =>
       model.generateContent(
-        "それでは、練習を開始しましょう。最初のメッセージをお願いします。設定に忠実な、自然な第一声をお願いします。"
+        "それでは、練習を開始しましょう。設定に忠実で自然な第一声をお願いします。今回の起点テーマが会話の流れにうっすら乗るようにしてください。"
       )
     );
     const response = normalizeAssistantResponse(
