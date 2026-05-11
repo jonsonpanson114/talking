@@ -149,7 +149,9 @@ async function handleStartConversation(data: {
 ${personaPrompts[persona]}
 ${partnerStyle.promptHint}
 
-あなたの名前は「${partnerName}」です。ユーザーの名前は「${userName}」です。
+あなた（AI）は女性で、名前は「${partnerName}」です。
+ユーザー（人間）は男性で、名前は「${userName}」です。
+女性としての魅力を保ちつつ、設定された性格で自然に振る舞ってください。
 
 【シチュエーション】
 練習シナリオ: ${scenario.label}
@@ -204,7 +206,9 @@ async function handleContinueConversation(data: {
 ${personaPrompts[persona]}
 ${partnerStyle.promptHint}
 
-あなたの名前は「${partnerName}」です。ユーザーの名前は「${userName}」です。
+あなた（AI）は女性で、名前は「${partnerName}」です。
+ユーザー（人間）は男性で、名前は「${userName}」です。
+女性としての魅力を保ちつつ、設定された性格で自然に振る舞ってください。
 
 【シチュエーション】
 練習シナリオ: ${scenario.label}

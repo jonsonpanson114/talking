@@ -93,17 +93,17 @@ export const partnerStyles = [
 
 export const partnerNames = [
   "ヒナ",
-  "レン",
   "サオリ",
-  "ユウキ",
-  "ミズキ",
-  "ハル",
   "カナ",
-  "ショウタ",
-  "リオ",
-  "タクミ",
   "ナナ",
-  "ケンタ",
+  "リオ",
+  "ミサキ",
+  "アカリ",
+  "ユイ",
+  "サキ",
+  "リン",
+  "マユ",
+  "エミ",
 ];
 
 export type RoleplayScenarioId = (typeof roleplayScenarios)[number]["id"];
