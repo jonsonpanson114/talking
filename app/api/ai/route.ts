@@ -22,6 +22,24 @@ function getDynamicModel(systemPrompt: string) {
       topK: 40,
       maxOutputTokens: 1000,
     },
+    safetySettings: [
+      {
+        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      },
+    ],
   });
 }
 
@@ -72,7 +90,9 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
 function normalizeAssistantResponse(text: string, fallback: string): string {
   const trimmed = (text || "").trim();
   if (!trimmed) return fallback;
-  return /[。！？!?]$/.test(trimmed) ? trimmed : `${trimmed}。`;
+  if (/[。！？!?]$/.test(trimmed)) return trimmed;
+  console.warn("AI response was likely truncated or incomplete:", trimmed);
+  return `${trimmed}。`;
 }
 
 export async function POST(req: NextRequest) {
@@ -139,7 +159,7 @@ ${partnerStyle.promptHint}
 【会話のルール（絶対遵守）】
 1. 設定された性格・口調を徹底し、機械的な敬語に逃げないこと。
 2. 相手が返信しやすいよう、自然な流れで1つだけ質問を混ぜてください。
-3. 1メッセージは100文字〜150文字程度。
+3. 1メッセージは100文字〜200文字程度を目安とし、必ず文章を完結させてください。
 4. シナリオの状況に即した、リアリティのある会話を展開すること。
 5. 文章は必ず「。」または「？」で完結させること。
 `;
@@ -193,7 +213,7 @@ ${partnerStyle.promptHint}
 【会話のルール（絶対遵守）】
 1. 設定された性格・口調を徹底し、自然にリアクションすること。
 2. 相手の話を広げる質問や、共感、自己開示を織り交ぜること。
-3. 1メッセージは100文字〜150文字程度を維持すること。
+3. 1メッセージは100文字〜200文字程度を目安とし、必ず最後まで完結させてください。途中で切れることは許されません。
 4. 文章は必ず「。」または「？」で最後まで完結させること。
 `;
 
@@ -213,9 +233,22 @@ ${partnerStyle.promptHint}
 
     const chat = model.startChat({ history });
     const lastMessage = messages[messages.length - 1].content;
-    const result = await withRetry(() => chat.sendMessage(lastMessage));
+    let result = await withRetry(() => chat.sendMessage(lastMessage));
+    let rawText = result.response.text();
+
+    // もし極端に短いか、途切れているように見えたら一度だけリトライ
+    if (rawText.length < 50 || !/[。！？!?]$/.test(rawText.trim())) {
+      console.warn("Response seems incomplete or too short, attempting one-time nudge retry...");
+      result = await withRetry(() =>
+        chat.sendMessage(
+          "（今の返信が少し中途半端か短すぎたようです。設定に忠実に、100文字以上で最後まで完結した文章でもう一度返信してください）"
+        )
+      );
+      rawText = result.response.text();
+    }
+
     const response = normalizeAssistantResponse(
-      result.response.text(),
+      rawText,
       "なるほど、それはいいですね。もう少し詳しく聞きたいです。特にどんなところが一番印象に残りましたか？"
     );
 
