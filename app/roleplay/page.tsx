@@ -12,14 +12,35 @@ export default function RoleplayPage() {
   const [step, setStep] = useState<"settings" | "play" | "result">("settings");
   const [settings, setSettings] = useState<ConversationSettings>(() => {
     const randomPartner = partnerNames[Math.floor(Math.random() * partnerNames.length)];
+    const randomScenario = roleplayScenarios[Math.floor(Math.random() * roleplayScenarios.length)];
+    const randomStyle = partnerStyles[Math.floor(Math.random() * partnerStyles.length)];
+    const personaIds = ["casual", "serious", "humorous", "cool"] as const;
+    const randomPersona = personaIds[Math.floor(Math.random() * personaIds.length)];
+
     return {
       userName: "ノリ",
       partnerName: randomPartner,
-      persona: "casual",
-      scenarioId: "matching-app-first-chat",
-      partnerStyleId: "positive",
+      persona: randomPersona,
+      scenarioId: randomScenario.id,
+      partnerStyleId: randomStyle.id,
     };
   });
+
+  const handleShuffleAll = () => {
+    const randomPartner = partnerNames[Math.floor(Math.random() * partnerNames.length)];
+    const randomScenario = roleplayScenarios[Math.floor(Math.random() * roleplayScenarios.length)];
+    const randomStyle = partnerStyles[Math.floor(Math.random() * partnerStyles.length)];
+    const personaIds = ["casual", "serious", "humorous", "cool"] as const;
+    const randomPersona = personaIds[Math.floor(Math.random() * personaIds.length)];
+
+    setSettings({
+      ...settings,
+      partnerName: randomPartner,
+      persona: randomPersona,
+      scenarioId: randomScenario.id,
+      partnerStyleId: randomStyle.id,
+    });
+  };
   const [selectedQuestion, setSelectedQuestion] = useState(questions[0]);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [input, setInput] = useState("");
@@ -246,9 +267,18 @@ export default function RoleplayPage() {
               variants={fadeIn}
               className="space-y-4 sm:space-y-8"
             >
-              <div>
-                <h1 className="text-xl sm:text-4xl font-bold mb-0.5 sm:mb-2 tracking-tight">Roleplay</h1>
-                <p className="text-[10px] sm:text-base text-white/20 font-light italic">Vibe check before session.</p>
+              <div className="flex items-end justify-between mb-0.5 sm:mb-2">
+                <div>
+                  <h1 className="text-xl sm:text-4xl font-bold mb-0.5 sm:mb-2 tracking-tight">Roleplay</h1>
+                  <p className="text-[10px] sm:text-base text-white/20 font-light italic">Vibe check before session.</p>
+                </div>
+                <button
+                  onClick={handleShuffleAll}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass border-white/5 hover:bg-white/10 transition-all text-white/40 hover:text-white"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span className="text-[9px] uppercase tracking-wider font-bold">Shuffle All</span>
+                </button>
               </div>
 
               {/* 名前入力 */}
