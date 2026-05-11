@@ -91,5 +91,21 @@ export const partnerStyles = [
   },
 ] as const;
 
+export const partnerNames = [
+  "ヒナ",
+  "レン",
+  "サオリ",
+  "ユウキ",
+  "ミズキ",
+  "ハル",
+  "カナ",
+  "ショウタ",
+  "リオ",
+  "タクミ",
+  "ナナ",
+  "ケンタ",
+];
+
 export type RoleplayScenarioId = (typeof roleplayScenarios)[number]["id"];
 export type PartnerStyleId = (typeof partnerStyles)[number]["id"];
+

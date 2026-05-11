@@ -4,18 +4,21 @@ import { useMemo, useState } from "react";
 import { Home, Send, User, Bot, RotateCcw, CheckCircle, Target, Sparkles, ArrowRight, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { questions } from "@/lib/data/questions";
-import { partnerStyles, roleplayScenarios } from "@/lib/data/roleplayScenarios";
+import { partnerStyles, roleplayScenarios, partnerNames } from "@/lib/data/roleplayScenarios";
 import { ConversationEvaluation, ConversationMessage, ConversationSettings } from "@/lib/types";
 import Link from "next/link";
 
 export default function RoleplayPage() {
   const [step, setStep] = useState<"settings" | "play" | "result">("settings");
-  const [settings, setSettings] = useState<ConversationSettings>({
-    userName: "",
-    partnerName: "",
-    persona: "casual",
-    scenarioId: "matching-app-first-chat",
-    partnerStyleId: "positive",
+  const [settings, setSettings] = useState<ConversationSettings>(() => {
+    const randomPartner = partnerNames[Math.floor(Math.random() * partnerNames.length)];
+    return {
+      userName: "ノリ",
+      partnerName: randomPartner,
+      persona: "casual",
+      scenarioId: "matching-app-first-chat",
+      partnerStyleId: "positive",
+    };
   });
   const [selectedQuestion, setSelectedQuestion] = useState(questions[0]);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
@@ -251,17 +254,28 @@ export default function RoleplayPage() {
               {/* 名前入力 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                 <div className="space-y-1.5 sm:space-y-3">
-                  <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10 ml-2">You</label>
+                  <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10 ml-2">You (Fixed)</label>
                   <input
                     type="text"
                     value={settings.userName}
-                    onChange={(e) => setSettings({ ...settings, userName: e.target.value })}
-                    placeholder="Your name"
-                    className="input-elegant w-full py-2 sm:py-3 text-xs"
+                    readOnly
+                    className="input-elegant w-full py-2 sm:py-3 text-xs opacity-50 cursor-not-allowed bg-white/[0.02]"
                   />
                 </div>
                 <div className="space-y-1.5 sm:space-y-3">
-                  <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10 ml-2">Target</label>
+                  <div className="flex items-center justify-between ml-2">
+                    <label className="text-[8px] sm:text-[10px] uppercase tracking-widest font-semibold text-white/10">Target</label>
+                    <button
+                      onClick={() => {
+                        const randomName = partnerNames[Math.floor(Math.random() * partnerNames.length)];
+                        setSettings({ ...settings, partnerName: randomName });
+                      }}
+                      className="text-[8px] sm:text-[9px] text-white/20 hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <RotateCcw className="w-2 h-2" />
+                      Randomize
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={settings.partnerName}
